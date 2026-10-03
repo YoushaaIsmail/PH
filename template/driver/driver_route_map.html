@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Driver Route</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- TomTom CSS -->
+    <link rel="stylesheet"
+          href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css"/>
+
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #map { width: 100%; height: 100vh; }
+        .loading {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,.2);
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading" class="loading">Calculating route...</div>
+<div id="map"></div>
+
+<!-- TomTom SDK -->
+<script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js"></script>
+<script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/services/services-web.min.js"></script>
+
+<script>
+    const TOMTOM_KEY = "wncqPXyuwK1DoGAegYSHAJ5SyE3ATzh7";
+
+    // ✅ longitude , latitude
+    const driverLocation = [
+        {{ driver_location.x }},
+        {{ driver_location.y }}
+    ];
+
+    const orderLocation = [
+        {{ order_location.x }},
+        {{ order_location.y }}
+    ];
+
+    let map;
+
+    function initMap() {
+
+        map = tt.map({
+            key: TOMTOM_KEY,
+            container: "map",
+            center: driverLocation,
+            zoom: 13
+        });
+
+        map.addControl(new tt.NavigationControl());
+        map.addControl(new tt.FullscreenControl());
+
+        // Driver marker
+        new tt.Marker({ color: "#2563eb" })
+            .setLngLat(driverLocation)
+            .setPopup(new tt.Popup().setText("Driver"))
+            .addTo(map);
+
+        // Order marker
+        new tt.Marker({ color: "#16a34a" })
+            .setLngLat(orderLocation)
+            .setPopup(new tt.Popup().setText("Order Destination"))
+            .addTo(map);
+
+        fitBounds();
+        drawRoute();
+    }
+
+    function fitBounds() {
+        const bounds = new tt.LngLatBounds();
+        bounds.extend(driverLocation);
+        bounds.extend(orderLocation);
+        map.fitBounds(bounds, { padding: 80 });
+    }
+
+    function drawRoute() {
+        document.getElementById("loading").style.display = "block";
+
+        tt.services.calculateRoute({
+            key: TOMTOM_KEY,
+            travelMode: "car",
+            traffic: false,
+            locations: `${driverLocation[0]},${driverLocation[1]}:${orderLocation[0]},${orderLocation[1]}`
+        })
+        .then(res => {
+            document.getElementById("loading").style.display = "none";
+
+            const points = res.routes[0].legs[0].points.map(p => [p.lng, p.lat]);
+
+            if (map.getSource("route")) {
+                map.removeLayer("route");
+                map.removeSource("route");
+            }
+
+            map.addSource("route", {
+                type: "geojson",
+                data: {
+                    type: "Feature",
+                    geometry: {
+                        type: "LineString",
+                        coordinates: points
+                    }
+                }
+            });
+
+            map.addLayer({
+                id: "route",
+                type: "line",
+                source: "route",
+                paint: {
+                    "line-color": "#2563eb",
+                    "line-width": 5
+                }
+            });
+        })
+        .catch(err => {
+            document.getElementById("loading").style.display = "none";
+            console.error("Route error:", err);
+            alert("Failed to calculate route");
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", initMap);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,526 @@
+{% extends 'base.html' %}
+{% block title %}<span id="page-title">{{ title }}</span>{% endblock %}
+
+{% block content %}
+<style>
+  .custom-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .form-group label {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #198754;
+  }
+
+  .form-group .field-wrapper {
+    position: relative;
+  }
+
+  /* تعديل موضع الأيقونة للغة العربية */
+  body[dir="ltr"] .form-group i {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+  }
+
+  body[dir="rtl"] .form-group i {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    right: auto;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+  }
+
+  /* تعديل الحشوة بناءً على الاتجاه */
+  body[dir="ltr"] .form-group input,
+  body[dir="ltr"] .form-group textarea {
+    padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+  }
+
+  body[dir="rtl"] .form-group input,
+  body[dir="rtl"] .form-group textarea {
+    padding: 0.6rem 0.75rem 0.6rem 2.5rem;
+    text-align: right;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    border: 1px solid #198754;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f0f8ff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #146c43;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    background-color: #ffffff;
+  }
+
+  .form-group select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #198754;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f0f8ff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  body[dir="rtl"] .form-group select {
+    text-align: right;
+    direction: rtl;
+  }
+
+  .form-group select:focus {
+    border-color: #146c43;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    background-color: #ffffff;
+  }
+
+  .form-group .error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 2rem;
+  }
+
+  /* تعديل اتجاه الأزرار للغة العربية */
+  body[dir="rtl"] .form-actions {
+    justify-content: flex-end;
+  }
+
+  .form-actions .btn-success {
+    background-color: #198754;
+    border: none;
+  }
+
+  .form-actions .btn-success:hover {
+    background-color: #146c43;
+  }
+
+  .form-actions .btn-secondary {
+    background-color: #6c757d;
+  }
+
+  /* تعديل الأيقونات داخل الأزرار للغة العربية */
+  body[dir="rtl"] .btn i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  /* تصميم رأس البطاقة */
+  .card-header {
+    border-radius: 8px 8px 0 0;
+  }
+
+  /* تعديل تموضع النص في رأس البطاقة للغة العربية */
+  body[dir="rtl"] .card-header h5 {
+    text-align: right;
+  }
+
+  body[dir="ltr"] .card-header h5 {
+    text-align: left;
+  }
+
+  /* تحسين مظهر الحقول للغة العربية */
+  body[dir="rtl"] textarea {
+    text-align: right;
+    direction: rtl;
+  }
+
+  body[dir="rtl"] input[type="text"],
+  body[dir="rtl"] input[type="number"] {
+    text-align: right;
+  }
+
+  /* تحسين النصوص للغة العربية */
+  body[dir="rtl"] .form-group label {
+    text-align: right;
+  }
+
+  body[dir="rtl"] .form-group .error {
+    text-align: right;
+  }
+
+  /* تعديل حقول الاختيار المتعددة */
+  body[dir="rtl"] .form-group select[multiple] {
+    text-align: right;
+  }
+
+  body[dir="rtl"] .form-group select[multiple] option {
+    text-align: right;
+    padding-right: 10px;
+  }
+</style>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0" id="form-title">{{ title }}</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" class="custom-form" id="ingredient-form">
+      {% csrf_token %}
+      
+      <!-- حقل الاسم مع هوية للترجمة -->
+      <div class="form-group" id="name-field">
+        <label for="{{ form.name.id_for_label }}" id="name-label">{{ form.name.label }}</label>
+        <div class="field-wrapper">
+          {{ form.name }}
+          <i class="fa fa-tag"></i>
+        </div>
+        {% for error in form.name.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- حقل الوصف مع هوية للترجمة -->
+      <div class="form-group" id="description-field">
+        <label for="{{ form.description.id_for_label }}" id="description-label">{{ form.description.label }}</label>
+        <div class="field-wrapper">
+          {{ form.description }}
+          <i class="fa fa-align-left"></i>
+        </div>
+        {% for error in form.description.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- حقل الحالة (إذا وجد) -->
+      {% if form.is_active %}
+      <div class="form-group" id="status-field">
+        <label for="{{ form.is_active.id_for_label }}" id="status-label">{{ form.is_active.label }}</label>
+        <div class="field-wrapper">
+          {{ form.is_active }}
+          <i class="fa fa-toggle-on"></i>
+        </div>
+        {% for error in form.is_active.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- حقل الصورة (إذا وجد) -->
+      {% if form.image %}
+      <div class="form-group" id="image-field">
+        <label for="{{ form.image.id_for_label }}" id="image-label">{{ form.image.label }}</label>
+        <div class="field-wrapper">
+          {{ form.image }}
+          <i class="fa fa-image"></i>
+        </div>
+        {% if form.instance.image %}
+          <div class="mt-2">
+            <small class="text-muted" id="current-image-text">Current Image:</small>
+            <img src="{{ form.instance.image.url }}" alt="{{ form.instance.name }}" class="img-thumbnail mt-1" style="max-height: 100px;">
+          </div>
+        {% endif %}
+        {% for error in form.image.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- باقي الحقول المرئية -->
+      {% for field in form.visible_fields %}
+        {% if field.name != 'name' and field.name != 'description' and field.name != 'is_active' and field.name != 'image' %}
+        <div class="form-group" id="{{ field.name }}-field">
+          <label for="{{ field.id_for_label }}" id="{{ field.name }}-label">{{ field.label }}</label>
+          <div class="field-wrapper">
+            {{ field }}
+            <i class="fa fa-edit"></i>
+          </div>
+          {% for error in field.errors %}
+            <div class="error">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+
+      <!-- الحقول المخفية -->
+      {% for field in form.hidden_fields %}
+        {{ field }}
+      {% endfor %}
+
+      <div class="form-actions">
+        <!-- زر الحفظ مع هوية للترجمة -->
+        <button type="submit" class="btn btn-success" id="save-button">
+          <i class="fa fa-save me-1"></i> <span>Save</span>
+        </button>
+        <!-- زر الإلغاء مع هوية للترجمة -->
+        <a href="{% url 'app:ingredient_list' %}" class="btn btn-secondary" id="cancel-button">
+          <span>Cancel</span>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // وظائف الترجمة لهذه الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // دالة لترجمة النصوص بناءً على اللغة
+    function updateFormTexts() {
+      const isRTL = document.body.dir === 'rtl';
+      const isEditMode = window.location.pathname.includes('edit');
+      const formMode = isEditMode ? 'Edit' : 'Create';
+      
+      const translations = {
+        formTitle: isRTL ? 
+          (isEditMode ? 'تعديل المكون' : 'إنشاء مكون جديد') : 
+          (isEditMode ? 'Edit Ingredient' : 'Create New Ingredient'),
+        nameLabel: isRTL ? 'اسم المكون' : 'Ingredient Name',
+        descriptionLabel: isRTL ? 'الوصف' : 'Description',
+        statusLabel: isRTL ? 'الحالة' : 'Status',
+        imageLabel: isRTL ? 'الصورة' : 'Image',
+        currentImageText: isRTL ? 'الصورة الحالية:' : 'Current Image:',
+        saveButton: isRTL ? 'حفظ' : 'Save',
+        cancelButton: isRTL ? 'إلغاء' : 'Cancel',
+        namePlaceholder: isRTL ? 'أدخل اسم المكون...' : 'Enter ingredient name...',
+        descriptionPlaceholder: isRTL ? 'أدخل وصفاً للمكون...' : 'Enter ingredient description...',
+        activeStatus: isRTL ? 'نشط' : 'Active',
+        inactiveStatus: isRTL ? 'غير نشط' : 'Inactive',
+        chooseImage: isRTL ? 'اختر صورة...' : 'Choose image...',
+        formTitleCreate: isRTL ? 'إنشاء مكون جديد' : 'Create New Ingredient',
+        formTitleEdit: isRTL ? 'تعديل المكون' : 'Edit Ingredient'
+      };
+
+      // تحديث عنوان الصفحة
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) {
+        pageTitle.textContent = isRTL ? 
+          (formMode === 'Edit' ? 'تعديل المكون' : 'إنشاء مكون') : 
+          (formMode === 'Edit' ? 'Edit Ingredient' : 'Create Ingredient');
+      }
+
+      // تحديث عنوان النموذج
+      const formTitle = document.getElementById('form-title');
+      if (formTitle) {
+        formTitle.textContent = translations.formTitle;
+      }
+
+      // تحديث تسميات الحقول الأساسية
+      const nameLabel = document.getElementById('name-label');
+      if (nameLabel) nameLabel.textContent = translations.nameLabel;
+
+      const descriptionLabel = document.getElementById('description-label');
+      if (descriptionLabel) descriptionLabel.textContent = translations.descriptionLabel;
+
+      // تحديث تسمية حقل الحالة
+      const statusLabel = document.getElementById('status-label');
+      if (statusLabel) statusLabel.textContent = translations.statusLabel;
+
+      // تحديث تسمية حقل الصورة
+      const imageLabel = document.getElementById('image-label');
+      if (imageLabel) imageLabel.textContent = translations.imageLabel;
+
+      // تحديث نص الصورة الحالية
+      const currentImageText = document.getElementById('current-image-text');
+      if (currentImageText) currentImageText.textContent = translations.currentImageText;
+
+      // تحديث نصوص الأزرار
+      const saveButton = document.getElementById('save-button');
+      if (saveButton) saveButton.querySelector('span').textContent = translations.saveButton;
+
+      const cancelButton = document.getElementById('cancel-button');
+      if (cancelButton) cancelButton.querySelector('span').textContent = translations.cancelButton;
+
+      // تحديث النصوص التوضيحية في الحقول
+      const nameInput = document.querySelector('#name-field input');
+      if (nameInput && !nameInput.value && nameInput.placeholder === '') {
+        nameInput.placeholder = translations.namePlaceholder;
+      }
+
+      const descriptionInput = document.querySelector('#description-field textarea');
+      if (descriptionInput && !descriptionInput.value && descriptionInput.placeholder === '') {
+        descriptionInput.placeholder = translations.descriptionPlaceholder;
+      }
+
+      // تحديث خيارات حقل الحالة
+      const statusSelect = document.querySelector('#status-field select');
+      if (statusSelect) {
+        const options = statusSelect.options;
+        if (options.length >= 2) {
+          // عادة يكون الخيار الأول فارغاً
+          if (options[1]) options[1].textContent = translations.activeStatus;
+          if (options[2]) options[2].textContent = translations.inactiveStatus;
+        }
+      }
+
+      // تحديث نص زر اختيار الصورة
+      const imageInput = document.querySelector('#image-field input[type="file"]');
+      if (imageInput && imageInput.nextElementSibling && imageInput.nextElementSibling.classList.contains('form-control')) {
+        imageInput.nextElementSibling.textContent = translations.chooseImage;
+      }
+
+      // تحديث باقي الحقول الديناميكية
+      const dynamicFields = ['unit', 'price', 'category', 'type', 'quantity'];
+      dynamicFields.forEach(fieldName => {
+        const fieldLabel = document.getElementById(`${fieldName}-label`);
+        if (fieldLabel) {
+          const fieldTranslations = {
+            unit: isRTL ? 'الوحدة' : 'Unit',
+            price: isRTL ? 'السعر' : 'Price',
+            category: isRTL ? 'الفئة' : 'Category',
+            type: isRTL ? 'النوع' : 'Type',
+            quantity: isRTL ? 'الكمية' : 'Quantity'
+          };
+          fieldLabel.textContent = fieldTranslations[fieldName] || fieldLabel.textContent;
+        }
+      });
+
+      // تحديث عنوان علامة التبويب
+      document.title = isRTL ? 
+        `${translations.formTitle} - لوحة التحكم` : 
+        `${translations.formTitle} - Dashboard`;
+
+      // تحديث نصوص الأخطاء إن وجدت
+      updateErrorMessages();
+    }
+
+    // تحديث نصوص رسائل الأخطاء
+    function updateErrorMessages() {
+      const isRTL = document.body.dir === 'rtl';
+      const errorElements = document.querySelectorAll('.error');
+      
+      errorElements.forEach(errorElement => {
+        const errorText = errorElement.textContent;
+        const translations = {
+          'This field is required.': isRTL ? 'هذا الحقل مطلوب.' : 'This field is required.',
+          'Enter a valid email address.': isRTL ? 'أدخل عنوان بريد إلكتروني صالح.' : 'Enter a valid email address.',
+          'Ensure this value is less than or equal to 999999.99.': isRTL ? 'تأكد من أن هذه القيمة أقل من أو تساوي 999999.99.' : 'Ensure this value is less than or equal to 999999.99.',
+          'Enter a valid number.': isRTL ? 'أدخل رقمًا صالحًا.' : 'Enter a valid number.',
+          'Enter a valid date.': isRTL ? 'أدخل تاريخًا صالحًا.' : 'Enter a valid date.',
+          'Enter a valid URL.': isRTL ? 'أدخل رابطًا صالحًا.' : 'Enter a valid URL.',
+          'Enter a valid time.': isRTL ? 'أدخل وقتًا صالحًا.' : 'Enter a valid time.',
+          'The two password fields didn’t match.': isRTL ? 'حقلَا كلمة المرور غير متطابقين.' : 'The two password fields didn’t match.',
+          'This password is too short. It must contain at least 8 characters.': isRTL ? 'كلمة المرور قصيرة جدًا. يجب أن تحتوي على 8 أحرف على الأقل.' : 'This password is too short. It must contain at least 8 characters.',
+          'This password is too common.': isRTL ? 'كلمة المرور شائعة جدًا.' : 'This password is too common.',
+          'This password is entirely numeric.': isRTL ? 'كلمة المرور رقمية بالكامل.' : 'This password is entirely numeric.'
+        };
+        
+        if (translations[errorText]) {
+          errorElement.textContent = translations[errorText];
+        }
+      });
+    }
+
+    // مراقبة تغييرات اللغة
+    function observeLanguageChanges() {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'dir') {
+            updateFormTexts();
+          }
+        });
+      });
+
+      observer.observe(document.body, { attributes: true });
+    }
+
+    // إعداد معاينة الصورة
+    function setupImagePreview() {
+      const imageInput = document.querySelector('input[type="file"]');
+      if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              // عرض معاينة الصورة
+              const previewContainer = document.getElementById('image-preview');
+              if (!previewContainer) {
+                const container = document.createElement('div');
+                container.id = 'image-preview';
+                container.className = 'mt-2';
+                imageInput.parentNode.appendChild(container);
+              }
+              
+              const isRTL = document.body.dir === 'rtl';
+              const previewText = isRTL ? 'معاينة الصورة:' : 'Image Preview:';
+              
+              document.getElementById('image-preview').innerHTML = `
+                <small class="text-muted">${previewText}</small>
+                <img src="${e.target.result}" class="img-thumbnail mt-1" style="max-height: 100px;">
+              `;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+    }
+
+    // التحقق من النموذج قبل الإرسال
+    function setupFormValidation() {
+      const form = document.getElementById('ingredient-form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const requiredFields = form.querySelectorAll('[required]');
+          let hasEmptyFields = false;
+          const emptyFields = [];
+          
+          requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+              hasEmptyFields = true;
+              const fieldName = field.name || field.id;
+              emptyFields.push(fieldName);
+            }
+          });
+          
+          if (hasEmptyFields) {
+            e.preventDefault();
+            const isRTL = document.body.dir === 'rtl';
+            const message = isRTL ? 
+              'يرجى ملء جميع الحقول المطلوبة.' : 
+              'Please fill in all required fields.';
+            alert(message);
+            
+            // التركيز على أول حقل فارغ
+            const firstEmptyField = document.querySelector(`[name="${emptyFields[0]}"]`) || 
+                                   document.getElementById(emptyFields[0]);
+            if (firstEmptyField) {
+              firstEmptyField.focus();
+            }
+          }
+        });
+      }
+    }
+
+    // تشغيل الوظائف عند تحميل الصفحة
+    updateFormTexts();
+    observeLanguageChanges();
+    setupImagePreview();
+    setupFormValidation();
+
+    // تحديث النصوص عند تغيير اللغة من القالب الأساسي
+    document.addEventListener('languageChanged', function() {
+      updateFormTexts();
+    });
+  });
+</script>
+{% endblock %}

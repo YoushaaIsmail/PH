@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PharmaCare</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #20925d;
+            --primary-dark: #034325;
+            --primary-light: #e8f5e9;
+            --secondary-color: #6c757d;
+            --danger-color: #dc3545;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+            --light-bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --shadow-color: rgba(25, 135, 84, 0.15);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--light-bg) 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .login-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(25, 135, 84, 0.2);
+        }
+        
+        .card-header {
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            padding: 35px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 70%
+            );
+            animation: shine 3s infinite linear;
+        }
+        
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+        
+        .card-header h5 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            color: white;
+        }
+        
+        .card-header .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-body {
+            padding: 40px 35px;
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(32, 146, 93, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .logo i {
+            font-size: 36px;
+            color: white;
+        }
+        
+        .brand-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .brand-tagline {
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-label i {
+            color: var(--primary-color);
+            font-size: 16px;
+            width: 20px;
+        }
+        
+        .input-group {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+        
+        .input-group:focus-within {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(32, 146, 93, 0.15);
+            background-color: white;
+        }
+        
+        .form-control {
+            border: none;
+            border-radius: 0;
+            padding: 14px 15px;
+            font-size: 16px;
+            background: transparent;
+            height: 52px;
+        }
+        
+        .form-control:focus {
+            box-shadow: none;
+            background: transparent;
+        }
+        
+        .input-group-text {
+            background-color: transparent;
+            border: none;
+            color: var(--secondary-color);
+            padding: 0 15px;
+        }
+        
+        .password-toggle {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .password-toggle:hover {
+            color: var(--primary-color);
+        }
+        
+        .form-text {
+            font-size: 0.85rem;
+            color: var(--secondary-color);
+            margin-top: 8px;
+            padding-left: 5px;
+        }
+        
+        .form-check {
+            margin-bottom: 25px;
+        }
+        
+        .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin-top: 0.25rem;
+            border: 2px solid #dee2e6;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(32, 146, 93, 0.25);
+        }
+        
+        .form-check-label {
+            color: #495057;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .btn-login {
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-login:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(32, 146, 93, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .forgot-password a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+        
+        .login-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px;
+            margin-bottom: 20px;
+            animation: slideDown 0.5s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-danger {
+            background-color: #fee;
+            color: #c33;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert i {
+            margin-right: 10px;
+        }
+        
+        .input-error {
+            border-color: var(--danger-color) !important;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 576px) {
+            body {
+                padding: 15px;
+            }
+            
+            .login-container {
+                max-width: 100%;
+            }
+            
+            .card-body {
+                padding: 30px 20px;
+            }
+            
+            .card-header {
+                padding: 25px 15px;
+            }
+            
+            .card-header h5 {
+                font-size: 1.5rem;
+            }
+            
+            .brand-name {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .card-body {
+                padding: 25px 15px;
+            }
+            
+            .form-control {
+                padding: 12px 10px;
+                font-size: 15px;
+                height: 48px;
+            }
+            
+            .btn-login {
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-pills"></i>
+            </div>
+            <div class="brand-name">PharmaCare</div>
+            <div class="brand-tagline">Pharmacy Management System</div>
+        </div>
+        
+        <div class="login-card">
+            <div class="card-header text-white">
+                <h5><i class="fas fa-sign-in-alt me-2"></i>Welcome Back</h5>
+                <div class="subtitle">Sign in to your account</div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Display Django messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if message.tags == 'error' %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>{{ message }}
+                            </div>
+                        {% elif message.tags == 'success' %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>{{ message }}
+                            </div>
+                        {% elif message.tags == 'warning' %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>{{ message }}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>{{ message }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- Display form errors -->
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Invalid username or password. Please try again.
+                    </div>
+                {% endif %}
+                
+                <form method="POST" id="loginForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user"></i>Username
+                        </label>
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control" 
+                             
+                                   name="username" 
+                                   placeholder="Enter your username"
+                                   required
+                                   autocomplete="username"
+                                   autofocus
+                                   value="{{ form.username.value|default:'' }}">
+                            <span class="input-group-text">
+                                <i class="fas fa-user text-muted"></i>
+                            </span>
+                        </div>
+                        <div class="form-text">Enter your registered username</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>Password
+                        </label>
+                        <div class="input-group">
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Enter your password"
+                                   required
+                                   autocomplete="current-password">
+                            <span class="input-group-text password-toggle" id="togglePassword">
+                                <i class="fas fa-eye text-muted"></i>
+                            </span>
+                        </div>
+                        <div class="form-text">Enter your account password</div>
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                        <label class="form-check-label" for="rememberMe">Remember me on this device</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-login mt-3" id="submitBtn">
+                        <i class="fas fa-sign-in-alt"></i>Login to Dashboard
+                    </button>
+                    
+                    <div class="forgot-password">
+                      
+                    </div>
+                </form>
+                
+                <div class="login-footer">
+                    <p>Need access? <a href="mailto:admin@pharmacare.com">Contact Administrator</a></p>
+                    <div class="security-note">
+                        <i class="fas fa-shield-alt text-success"></i>
+                        <span>Secure login protected by encryption</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4">
+            <small class="text-muted">
+                &copy; {% now "Y" %} PharmaCare. All rights reserved.
+            </small>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle password visibility
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            
+            if (togglePassword) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Toggle eye icon
+                    const icon = this.querySelector('i');
+                    if (type === 'password') {
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    } else {
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    }
+                });
+            }
+            
+            // Form validation
+            const loginForm = document.getElementById('loginForm');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(e) {
+                    const username = document.getElementById('username').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    
+                    let hasError = false;
+                    
+                    // Validate username
+                    if (!username) {
+                        document.getElementById('username').parentElement.classList.add('input-error');
+                        hasError = true;
+                        
+                        setTimeout(() => {
+                            document.getElementById('username').parentElement.classList.remove('input-error');
+                        }, 1000);
+                    }
+                    
+                    // Validate password
+                    if (!password) {
+                        document.getElementById('password').parentElement.classList.add('input-error');
+                        hasError = true;
+                        
+                        setTimeout(() => {
+                            document.getElementById('password').parentElement.classList.remove('input-error');
+                        }, 1000);
+                    }
+                    
+                    if (hasError) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Show loading state
+                    const originalHTML = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                    submitBtn.disabled = true;
+                    loginForm.classList.add('loading');
+                    
+                    // Re-enable after 10 seconds if something goes wrong
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalHTML;
+                        submitBtn.disabled = false;
+                        loginForm.classList.remove('loading');
+                    }, 10000);
+                });
+            }
+            
+            // Forgot password link
+            const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+            if (forgotPasswordLink) {
+                forgotPasswordLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('Please contact your system administrator to reset your password.\n\nEmail: admin@pharmacare.com\nPhone: +1 (555) 123-4567');
+                });
+            }
+            
+            // Focus effects
+            const inputs = document.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.borderColor = 'var(--primary-color)';
+                    this.parentElement.style.boxShadow = '0 0 0 3px rgba(32, 146, 93, 0.15)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.borderColor = '#e2e8f0';
+                    this.parentElement.style.boxShadow = 'none';
+                });
+            });
+            
+            // Auto-capitalize username to lowercase
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) {
+                usernameInput.addEventListener('input', function() {
+                    this.value = this.value.toLowerCase();
+                });
+            }
+            
+            // Check for saved username in localStorage
+            const savedUsername = localStorage.getItem('pharmacare_username');
+            const rememberMe = document.getElementById('rememberMe');
+            
+            if (savedUsername) {
+                usernameInput.value = savedUsername;
+                rememberMe.checked = true;
+            }
+            
+            // Save username if remember me is checked
+            rememberMe.addEventListener('change', function() {
+                if (this.checked && usernameInput.value) {
+                    localStorage.setItem('pharmacare_username', usernameInput.value);
+                } else {
+                    localStorage.removeItem('pharmacare_username');
+                }
+            });
+            
+            // Save username on input if remember me is checked
+            usernameInput.addEventListener('input', function() {
+                if (rememberMe.checked && this.value) {
+                    localStorage.setItem('pharmacare_username', this.value);
+                }
+            });
+            
+            // Add animation to login card on load
+            const loginCard = document.querySelector('.login-card');
+            if (loginCard) {
+                setTimeout(() => {
+                    loginCard.style.opacity = '1';
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

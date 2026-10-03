@@ -1,0 +1,51 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Login</h1>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- User Form -->
+      <h3 style="color: white;">Account Information</h3>
+
+      <div class="input-group">
+        <i class="fa fa-user"></i>
+        {{ user_form.username }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-lock"></i>
+        {{ user_form.password }}
+      </div>
+
+
+      <button type="submit">login</button>
+    </form>
+
+<div class="links">
+    <a href="{% url 'app:forget_password' %}">Forgot Password?</a>
+</div>
+<div class="button">
+    <a href="{% url 'app:registerCus' %}">Register ?</a>
+</div>
+    {% if user_form.errors %}
+      <div style="color:red; margin-top:10px;">
+        <h4>Errors:</h4>
+        {{ user_form.errors }}
+      
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

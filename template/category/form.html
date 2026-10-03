@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% block title %}<span id="page-title">{{ title }}</span>{% endblock %}
+
+{% block content %}
+<style>
+  .custom-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .form-group label {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #198754;
+  }
+
+  .form-group .field-wrapper {
+    position: relative;
+  }
+
+  /* تعديل موضع الأيقونة للغة العربية */
+  body[dir="ltr"] .form-group i {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+  }
+
+  body[dir="rtl"] .form-group i {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    right: auto;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+  }
+
+  /* تعديل الحشوة بناءً على الاتجاه */
+  body[dir="ltr"] .form-group input,
+  body[dir="ltr"] .form-group textarea {
+    padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+  }
+
+  body[dir="rtl"] .form-group input,
+  body[dir="rtl"] .form-group textarea {
+    padding: 0.6rem 0.75rem 0.6rem 2.5rem;
+    text-align: right;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    border: 1px solid #198754;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f0f8ff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #146c43;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    background-color: #ffffff;
+  }
+
+  .form-group .error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 2rem;
+  }
+
+  /* تعديل اتجاه الأزرار للغة العربية */
+  body[dir="rtl"] .form-actions {
+    justify-content: flex-end;
+  }
+
+  .form-actions .btn-success {
+    background-color: #198754;
+    border: none;
+  }
+
+  .form-actions .btn-success:hover {
+    background-color: #146c43;
+  }
+
+  .form-actions .btn-secondary {
+    background-color: #6c757d;
+  }
+
+  /* تعديل الأيقونات داخل الأزرار للغة العربية */
+  body[dir="rtl"] .btn i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  /* تصميم رأس البطاقة */
+  .card-header {
+    border-radius: 8px 8px 0 0;
+  }
+
+  /* تعديل تموضع النص في رأس البطاقة للغة العربية */
+  body[dir="rtl"] .card-header h5 {
+    text-align: right;
+  }
+
+  body[dir="ltr"] .card-header h5 {
+    text-align: left;
+  }
+
+  /* تحسين مظهر الحقول للغة العربية */
+  body[dir="rtl"] textarea {
+    text-align: right;
+    direction: rtl;
+  }
+
+  /* تحسين النصوص للغة العربية */
+  body[dir="rtl"] .form-group label {
+    text-align: right;
+  }
+
+  body[dir="rtl"] .form-group .error {
+    text-align: right;
+  }
+</style>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0" id="form-title">{{ title }}</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" class="custom-form">
+      {% csrf_token %}
+      
+      <!-- حقل الاسم مع هوية للترجمة -->
+      <div class="form-group" id="name-field">
+        <label for="{{ form.name.id_for_label }}" id="name-label">{{ form.name.label }}</label>
+        <div class="field-wrapper">
+          {{ form.name }}
+          <i class="fa fa-tag"></i>
+        </div>
+        {% for error in form.name.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- حقل الرابط مع هوية للترجمة -->
+      <div class="form-group" id="slug-field">
+        <label for="{{ form.slug.id_for_label }}" id="slug-label">{{ form.slug.label }}</label>
+        <div class="field-wrapper">
+          {{ form.slug }}
+          <i class="fa fa-link"></i>
+        </div>
+        {% for error in form.slug.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- حقل الوصف مع هوية للترجمة -->
+      <div class="form-group" id="description-field">
+        <label for="{{ form.description.id_for_label }}" id="description-label">{{ form.description.label }}</label>
+        <div class="field-wrapper">
+          {{ form.description }}
+          <i class="fa fa-align-left"></i>
+        </div>
+        {% for error in form.description.errors %}
+          <div class="error">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- باقي الحقول المخفية -->
+      {% for field in form.hidden_fields %}
+        {{ field }}
+      {% endfor %}
+
+      <div class="form-actions">
+        <!-- زر الحفظ مع هوية للترجمة -->
+        <button type="submit" class="btn btn-success" id="save-button">
+          <i class="fa fa-save me-1"></i> <span>Save</span>
+        </button>
+        <!-- زر الإلغاء مع هوية للترجمة -->
+        <a href="{% url 'app:category_list' %}" class="btn btn-secondary" id="cancel-button">
+          <span>Cancel</span>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // وظائف الترجمة لهذه الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // دالة لترجمة النصوص بناءً على اللغة
+    function updateFormTexts() {
+      const isRTL = document.body.dir === 'rtl';
+      const translations = {
+        formTitle: isRTL ? 'نموذج الفئة' : 'Category Form',
+        nameLabel: isRTL ? 'اسم الفئة' : 'Category Name',
+        slugLabel: isRTL ? 'الرابط' : 'Slug',
+        descriptionLabel: isRTL ? 'الوصف' : 'Description',
+        saveButton: isRTL ? 'حفظ' : 'Save',
+        cancelButton: isRTL ? 'إلغاء' : 'Cancel',
+        namePlaceholder: isRTL ? 'أدخل اسم الفئة...' : 'Enter category name...',
+        slugPlaceholder: isRTL ? 'سيتم إنشاء الرابط تلقائياً' : 'Slug will be generated automatically',
+        descriptionPlaceholder: isRTL ? 'أدخل وصفاً للفئة...' : 'Enter category description...'
+      };
+
+      // تحديث عنوان الصفحة
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = isRTL ? (pageTitle.textContent === 'Create Category' ? 'إنشاء فئة' : 'تعديل فئة') : pageTitle.textContent;
+
+      // تحديث عنوان النموذج
+      const formTitle = document.getElementById('form-title');
+      if (formTitle) formTitle.textContent = isRTL ? (formTitle.textContent === 'Create Category' ? 'إنشاء فئة جديدة' : 'تعديل الفئة') : formTitle.textContent;
+
+      // تحديث تسميات الحقول
+      const nameLabel = document.getElementById('name-label');
+      if (nameLabel) nameLabel.textContent = translations.nameLabel;
+
+      const slugLabel = document.getElementById('slug-label');
+      if (slugLabel) slugLabel.textContent = translations.slugLabel;
+
+      const descriptionLabel = document.getElementById('description-label');
+      if (descriptionLabel) descriptionLabel.textContent = translations.descriptionLabel;
+
+      // تحديث نصوص الأزرار
+      const saveButton = document.getElementById('save-button');
+      if (saveButton) saveButton.querySelector('span').textContent = translations.saveButton;
+
+      const cancelButton = document.getElementById('cancel-button');
+      if (cancelButton) cancelButton.querySelector('span').textContent = translations.cancelButton;
+
+      // تحديث النصوص التوضيحية في الحقول
+      const nameInput = document.querySelector('#name-field input');
+      if (nameInput && !nameInput.value) {
+        nameInput.placeholder = translations.namePlaceholder;
+      }
+
+      const slugInput = document.querySelector('#slug-field input');
+      if (slugInput && !slugInput.value) {
+        slugInput.placeholder = translations.slugPlaceholder;
+      }
+
+      const descriptionInput = document.querySelector('#description-field textarea');
+      if (descriptionInput && !descriptionInput.value) {
+        descriptionInput.placeholder = translations.descriptionPlaceholder;
+      }
+
+      // تحديث عناوين الصفحة في علامات التبويب
+      document.title = isRTL ? 
+        (pageTitle.textContent.includes('Create') ? 'إنشاء فئة - لوحة التحكم' : 'تعديل فئة - لوحة التحكم') : 
+        document.title;
+    }
+
+    // مراقبة تغييرات اللغة
+    function observeLanguageChanges() {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'dir') {
+            updateFormTexts();
+          }
+        });
+      });
+
+      observer.observe(document.body, { attributes: true });
+    }
+
+    // وظيفة لإنشاء رابط تلقائي من الاسم
+    function generateSlug() {
+      const nameField = document.querySelector('#name-field input');
+      const slugField = document.querySelector('#slug-field input');
+      
+      if (nameField && slugField) {
+        nameField.addEventListener('input', function() {
+          if (!slugField.value || slugField.value === '') {
+            const slug = this.value
+              .toLowerCase()
+              .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-')
+              .trim();
+            slugField.value = slug;
+          }
+        });
+      }
+    }
+
+    // تشغيل الوظائف عند تحميل الصفحة
+    updateFormTexts();
+    observeLanguageChanges();
+    generateSlug();
+
+    // تحديث النصوص التوضيحية عند تغيير اللغة
+    document.addEventListener('languageChanged', function() {
+      updateFormTexts();
+    });
+  });
+</script>
+{% endblock %}

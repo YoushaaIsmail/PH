@@ -1,0 +1,418 @@
+{% extends 'base.html' %}
+{% block title %}<span id="page-title">Delete Ingredient</span>{% endblock %}
+
+{% block content %}
+<style>
+  .delete-card {
+    max-width: 500px;
+    margin: 4rem auto;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+  }
+
+  /* تعديل المحاذاة للغة العربية */
+  body[dir="rtl"] .delete-card {
+    text-align: right;
+  }
+
+  body[dir="ltr"] .delete-card {
+    text-align: left;
+  }
+
+  .delete-card h3 {
+    color: #198754;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 700;
+  }
+
+  /* تعديل الأيقونات في الأزرار للغة العربية */
+  body[dir="rtl"] .delete-card .btn i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  .delete-card .btn-danger {
+    background-color: #dc3545;
+    border: none;
+    width: 48%;
+  }
+
+  .delete-card .btn-danger:hover {
+    background-color: #b02a37;
+  }
+
+  .delete-card .btn-secondary {
+    width: 48%;
+  }
+
+  .delete-card .btn-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  /* تعديل اتجاه الأزرار للغة العربية */
+  body[dir="rtl"] .delete-card .btn-group {
+    flex-direction: row-reverse;
+  }
+
+  /* تصميم رسالة التحذير */
+  .warning-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  body[dir="rtl"] .warning-message {
+    text-align: right;
+  }
+
+  .warning-message i {
+    color: #ffc107;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* تصميم تفاصيل المكون */
+  .ingredient-details {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #dc3545;
+  }
+
+  body[dir="rtl"] .ingredient-details {
+    border-left: none;
+    border-right: 4px solid #dc3545;
+  }
+
+  .ingredient-details p {
+    margin-bottom: 0.5rem;
+  }
+
+  .ingredient-details strong {
+    color: #495057;
+  }
+
+  .ingredient-details .detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  body[dir="rtl"] .ingredient-details .detail-item {
+    flex-direction: row-reverse;
+  }
+
+  .ingredient-details .detail-item:last-child {
+    border-bottom: none;
+  }
+
+  /* تصميم التأثيرات */
+  .delete-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .delete-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+</style>
+
+<div class="delete-card">
+    <!-- رسالة تحذير -->
+    <div class="warning-message" id="warning-message">
+        <i class="fa fa-exclamation-triangle"></i>
+        <p id="warning-text">This action cannot be undone!</p>
+    </div>
+
+    <!-- تفاصيل المكون -->
+    <div class="ingredient-details">
+        <h3 id="delete-question">Are you sure you want to delete "<strong>{{ ingredient.name }}</strong>"?</h3>
+        
+        <div class="detail-item">
+            <strong id="ingredient-name-label">Name:</strong>
+            <span>{{ ingredient.name }}</span>
+        </div>
+
+        {% if ingredient.description %}
+        <div class="detail-item">
+            <strong id="ingredient-description-label">Description:</strong>
+            <span>{{ ingredient.description|truncatewords:20 }}</span>
+        </div>
+        {% endif %}
+
+        {% if ingredient.created_at %}
+        <div class="detail-item">
+            <strong id="created-at-label">Created at:</strong>
+            <span>{{ ingredient.created_at|date:"Y-m-d H:i" }}</span>
+        </div>
+        {% endif %}
+
+        {% if ingredient.updated_at %}
+        <div class="detail-item">
+            <strong id="updated-at-label">Updated at:</strong>
+            <span>{{ ingredient.updated_at|date:"Y-m-d H:i" }}</span>
+        </div>
+        {% endif %}
+
+        {% if ingredient.is_active is not None %}
+        <div class="detail-item">
+            <strong id="status-label">Status:</strong>
+            <span>
+                {% if ingredient.is_active %}
+                    <span class="badge bg-success" id="active-status">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary" id="inactive-status">Inactive</span>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        {% if ingredient.image %}
+        <div class="detail-item">
+            <strong id="image-label">Image:</strong>
+            <span>
+                <img src="{{ ingredient.image.url }}" alt="{{ ingredient.name }}" 
+                     class="img-thumbnail" style="max-height: 50px;">
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- معلومات التأثيرات -->
+    <div class="alert alert-warning" id="impact-warning">
+        <i class="fa fa-info-circle me-2"></i>
+        <span id="impact-text">
+            Deleting this ingredient may affect related medicines and recipes.
+        </span>
+    </div>
+
+    <form method="post" id="delete-form">
+        {% csrf_token %}
+        <div class="btn-group">
+            <!-- زر التأكيد مع هوية للترجمة -->
+            <button type="submit" class="btn btn-danger" id="confirm-delete-btn">
+                <i class="fa fa-trash me-1"></i> <span>Yes, Delete</span>
+            </button>
+            <!-- زر الإلغاء مع هوية للترجمة -->
+            <a href="{% url 'app:ingredient_list' %}" class="btn btn-secondary" id="cancel-btn">
+                <i class="fa fa-times me-1"></i> <span>Cancel</span>
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+  // وظائف الترجمة لهذه الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // دالة لترجمة النصوص بناءً على اللغة
+    function updateDeleteTexts() {
+      const isRTL = document.body.dir === 'rtl';
+      const ingredientName = "{{ ingredient.name }}";
+      
+      const translations = {
+        pageTitle: isRTL ? 'حذف المكون' : 'Delete Ingredient',
+        warningText: isRTL ? 'هذا الإجراء لا يمكن التراجع عنه!' : 'This action cannot be undone!',
+        deleteQuestion: isRTL ? 
+          `هل أنت متأكد من رغبتك في حذف "<strong>${ingredientName}</strong>"؟` : 
+          `Are you sure you want to delete "<strong>${ingredientName}</strong>"?`,
+        nameLabel: isRTL ? 'الاسم:' : 'Name:',
+        descriptionLabel: isRTL ? 'الوصف:' : 'Description:',
+        createdAtLabel: isRTL ? 'تاريخ الإنشاء:' : 'Created at:',
+        updatedAtLabel: isRTL ? 'تاريخ التحديث:' : 'Updated at:',
+        statusLabel: isRTL ? 'الحالة:' : 'Status:',
+        imageLabel: isRTL ? 'الصورة:' : 'Image:',
+        activeStatus: isRTL ? 'نشط' : 'Active',
+        inactiveStatus: isRTL ? 'غير نشط' : 'Inactive',
+        impactText: isRTL ? 'حذف هذا المكون قد يؤثر على الأدوية والوصفات المرتبطة به.' : 
+                           'Deleting this ingredient may affect related medicines and recipes.',
+        confirmButton: isRTL ? 'نعم، احذف' : 'Yes, Delete',
+        cancelButton: isRTL ? 'إلغاء' : 'Cancel',
+        confirmationMessage: isRTL ? 
+          `هل أنت متأكد تماماً من حذف المكون "${ingredientName}"؟\nلا يمكن استعادة البيانات المحذوفة.` : 
+          `Are you absolutely sure you want to delete "${ingredientName}"?\nDeleted data cannot be recovered.`
+      };
+
+      // تحديث عنوان الصفحة
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = translations.pageTitle;
+
+      // تحديث رسالة التحذير
+      const warningText = document.getElementById('warning-text');
+      if (warningText) warningText.textContent = translations.warningText;
+
+      // تحديث سؤال الحذف
+      const deleteQuestion = document.getElementById('delete-question');
+      if (deleteQuestion) {
+        deleteQuestion.innerHTML = translations.deleteQuestion;
+      }
+
+      // تحديث تسميات تفاصيل المكون
+      const nameLabel = document.getElementById('ingredient-name-label');
+      if (nameLabel) nameLabel.textContent = translations.nameLabel;
+
+      const descriptionLabel = document.getElementById('ingredient-description-label');
+      if (descriptionLabel) descriptionLabel.textContent = translations.descriptionLabel;
+
+      const createdAtLabel = document.getElementById('created-at-label');
+      if (createdAtLabel) createdAtLabel.textContent = translations.createdAtLabel;
+
+      const updatedAtLabel = document.getElementById('updated-at-label');
+      if (updatedAtLabel) updatedAtLabel.textContent = translations.updatedAtLabel;
+
+      const statusLabel = document.getElementById('status-label');
+      if (statusLabel) statusLabel.textContent = translations.statusLabel;
+
+      const imageLabel = document.getElementById('image-label');
+      if (imageLabel) imageLabel.textContent = translations.imageLabel;
+
+      // تحديث حالة النشاط/التعطيل
+      const activeStatus = document.getElementById('active-status');
+      if (activeStatus) activeStatus.textContent = translations.activeStatus;
+
+      const inactiveStatus = document.getElementById('inactive-status');
+      if (inactiveStatus) inactiveStatus.textContent = translations.inactiveStatus;
+
+      // تحديث نص تحذير التأثيرات
+      const impactText = document.getElementById('impact-text');
+      if (impactText) impactText.textContent = translations.impactText;
+
+      // تحديث نصوص الأزرار
+      const confirmButton = document.getElementById('confirm-delete-btn');
+      if (confirmButton) {
+        confirmButton.querySelector('span').textContent = translations.confirmButton;
+        confirmButton.title = isRTL ? 'حذف المكون نهائياً' : 'Delete ingredient permanently';
+      }
+
+      const cancelButton = document.getElementById('cancel-btn');
+      if (cancelButton) {
+        cancelButton.querySelector('span').textContent = translations.cancelButton;
+        cancelButton.title = isRTL ? 'العودة إلى قائمة المكونات' : 'Back to ingredients list';
+      }
+
+      // تحديث عنوان علامة التبويب
+      document.title = isRTL ? 'حذف المكون - لوحة التحكم' : 'Delete Ingredient - Dashboard';
+    }
+
+    // مراقبة تغييرات اللغة
+    function observeLanguageChanges() {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'dir') {
+            updateDeleteTexts();
+          }
+        });
+      });
+
+      observer.observe(document.body, { attributes: true });
+    }
+
+    // تأكيد الحذف قبل الإرسال
+    function setupDeleteConfirmation() {
+      const deleteForm = document.getElementById('delete-form');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+          const isRTL = document.body.dir === 'rtl';
+          const ingredientName = "{{ ingredient.name }}";
+          
+          const confirmationMessage = isRTL ? 
+            `هل أنت متأكد تماماً من حذف المكون "${ingredientName}"؟\nلا يمكن استعادة البيانات المحذوفة.\n\nاضغط "موافق" للمواصلة أو "إلغاء" للإلغاء.` : 
+            `Are you absolutely sure you want to delete "${ingredientName}"?\nDeleted data cannot be recovered.\n\nPress "OK" to continue or "Cancel" to abort.`;
+          
+          if (!confirm(confirmationMessage)) {
+            e.preventDefault();
+            
+            // إضافة تأثير مرئي للإلغاء
+            const deleteCard = document.querySelector('.delete-card');
+            deleteCard.style.transform = 'translateX(10px)';
+            setTimeout(() => {
+              deleteCard.style.transform = 'translateX(0)';
+            }, 300);
+            
+            return false;
+          }
+          
+          // إظهار رسالة تحميل
+          const submitButton = document.getElementById('confirm-delete-btn');
+          const originalText = submitButton.innerHTML;
+          submitButton.innerHTML = isRTL ? 
+            '<i class="fa fa-spinner fa-spin me-1"></i> جاري الحذف...' : 
+            '<i class="fa fa-spinner fa-spin me-1"></i> Deleting...';
+          submitButton.disabled = true;
+          
+          // استعادة النص بعد 3 ثواني (في حالة وجود خطأ)
+          setTimeout(() => {
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+          }, 3000);
+          
+          return true;
+        });
+      }
+    }
+
+    // إضافة تأثيرات تفاعلية
+    function setupInteractiveEffects() {
+      const deleteButton = document.getElementById('confirm-delete-btn');
+      const cancelButton = document.getElementById('cancel-btn');
+      
+      if (deleteButton) {
+        deleteButton.addEventListener('mouseenter', function() {
+          this.style.transform = 'scale(1.05)';
+        });
+        
+        deleteButton.addEventListener('mouseleave', function() {
+          this.style.transform = 'scale(1)';
+        });
+      }
+      
+      if (cancelButton) {
+        cancelButton.addEventListener('mouseenter', function() {
+          this.style.transform = 'scale(1.05)';
+        });
+        
+        cancelButton.addEventListener('mouseleave', function() {
+          this.style.transform = 'scale(1)';
+        });
+      }
+      
+      // إضافة تأثير للبطاقة
+      const deleteCard = document.querySelector('.delete-card');
+      if (deleteCard) {
+        deleteCard.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-5px)';
+        });
+        
+        deleteCard.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+        });
+      }
+    }
+
+    // تشغيل الوظائف عند تحميل الصفحة
+    updateDeleteTexts();
+    observeLanguageChanges();
+    setupDeleteConfirmation();
+    setupInteractiveEffects();
+
+    // تحديث النصوص عند تغيير اللغة من القالب الأساسي
+    document.addEventListener('languageChanged', function() {
+      updateDeleteTexts();
+    });
+    
+    // تحديث اتجاه النص في الأيقونات
+    document.addEventListener('dirChanged', function() {
+      updateDeleteTexts();
+    });
+  });
+</script>
+{% endblock %}

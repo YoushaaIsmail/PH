@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% block title %}<span id="page-title">Category List</span>{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  body[dir="rtl"] {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #e8f5e9;
+  }
+
+  .table th {
+    color: #198754;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+  }
+
+  /* تعديل الجداول للغة العربية */
+  body[dir="rtl"] .table th,
+  body[dir="rtl"] .table td {
+    text-align: right;
+  }
+
+  body[dir="rtl"] .table-responsive .table thead tr th:nth-child(4) {
+    text-align: center;
+  }
+
+  .card-custom {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(90deg, #198754, #28a745);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* تعديل رأس البطاقة للغة العربية */
+  body[dir="rtl"] .card-header-custom {
+    background: linear-gradient(-90deg, #198754, #28a745);
+  }
+
+  .btn-light.text-primary {
+    color: #198754 !important;
+  }
+
+  .btn-light.text-primary:hover {
+    background-color: #198754;
+    color: white !important;
+  }
+
+  .table thead {
+    background-color: #d1e7dd;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .pagination .page-link {
+    color: #198754;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #198754;
+    color: white;
+  }
+
+  .input-group .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+  }
+
+  .btn-primary {
+    background-color: #198754;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #157347;
+  }
+
+  /* تحسينات للأزرار في اللغة العربية */
+  body[dir="rtl"] .btn i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  body[dir="rtl"] .input-group .btn {
+    border-radius: 0.375rem 0 0 0.375rem;
+  }
+
+  body[dir="rtl"] .input-group .form-control {
+    border-radius: 0 0.375rem 0.375rem 0;
+  }
+
+  /* تحسين التباعد في الجداول */
+  body[dir="rtl"] .table td:last-child {
+    text-align: center;
+  }
+</style>
+
+<div class="card card-custom mb-4">
+  <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <!-- زر الإضافة مع هوية للترجمة -->
+    <a href="{% url 'app:category_create' %}" class="btn btn-light text-primary fw-semibold" id="add-category-btn">
+      <i class="fa fa-plus me-1"></i> <span>Add New Category</span>
+    </a>
+    
+    <!-- نموذج البحث مع هوية للترجمة -->
+    <form method="get" class="mb-0 flex-grow-1" style="max-width: 400px;">
+      <div class="input-group shadow-sm">
+        <input type="text" name="q" class="form-control border-success" 
+               id="search-input"
+               placeholder="Search for a category..." value="{{ request.GET.q }}">
+        <button class="btn btn-primary" type="submit" id="search-btn">
+          <i class="fa fa-search"></i> <span>Search</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-body bg-white">
+    {% if categories %}
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle shadow-sm" style="background-color: #fdfdfd;">
+        <thead class="text-center">
+          <tr>
+            <th id="th-name">Name</th>
+            <th id="th-slug">Slug</th>
+            <th id="th-description">Description</th>
+            <th id="th-actions"><i class="fa fa-gear me-1"></i> <span>Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+          <tr class="text-center">
+            <td>{{ category.name }}</td>
+            <td>{{ category.slug }}</td>
+            <td>{{ category.description|default:"—"|truncatewords:15 }}</td>
+            <td>
+              <div class="d-flex gap-2 justify-content-center" style="gap: 10px;">
+                <a href="{% url 'app:category_edit' category.pk %}" class="btn btn-sm btn-outline-success" title="Edit">
+                  <i class="fa fa-edit"></i>
+                </a>
+                <a href="{% url 'app:category_delete' category.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
+                  <i class="fa fa-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 🔽 Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="d-flex justify-content-center mt-4">
+      <ul class="pagination pagination-sm">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?q={{ request.GET.q }}&page=1" title="First" id="first-page">
+              <i class="fas fa-angles-left"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}" title="Previous" id="prev-page">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-left"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left"></i></span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?q={{ request.GET.q }}&page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}" title="Next" id="next-page">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?q={{ request.GET.q }}&page={{ page_obj.paginator.num_pages }}" title="Last" id="last-page">
+              <i class="fas fa-angles-right"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-right"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-right"></i></span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    <!-- 🔼 Pagination End -->
+
+    {% else %}
+    <p class="text-muted text-center" id="no-categories">No categories found.</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  // وظائف الترجمة لهذه الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // تحديث النصوص عند تغيير اللغة
+    function updatePageTexts() {
+      const isRTL = document.body.dir === 'rtl';
+      const translations = {
+        pageTitle: isRTL ? 'قائمة الفئات' : 'Category List',
+        addButton: isRTL ? 'إضافة فئة جديدة' : 'Add New Category',
+        searchPlaceholder: isRTL ? 'ابحث عن فئة...' : 'Search for a category...',
+        searchButton: isRTL ? 'بحث' : 'Search',
+        nameHeader: isRTL ? 'الاسم' : 'Name',
+        slugHeader: isRTL ? 'الرابط' : 'Slug',
+        descriptionHeader: isRTL ? 'الوصف' : 'Description',
+        actionsHeader: isRTL ? 'الإجراءات' : 'Actions',
+        noCategories: isRTL ? 'لا توجد فئات.' : 'No categories found.',
+        firstPageTitle: isRTL ? 'الأولى' : 'First',
+        prevPageTitle: isRTL ? 'السابق' : 'Previous',
+        nextPageTitle: isRTL ? 'التالي' : 'Next',
+        lastPageTitle: isRTL ? 'الأخيرة' : 'Last'
+      };
+
+      // تحديث عناصر الصفحة
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = translations.pageTitle;
+
+      const addBtn = document.getElementById('add-category-btn');
+      if (addBtn) addBtn.querySelector('span').textContent = translations.addButton;
+
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) searchInput.placeholder = translations.searchPlaceholder;
+
+      const searchBtn = document.getElementById('search-btn');
+      if (searchBtn) searchBtn.querySelector('span').textContent = translations.searchButton;
+
+      const thName = document.getElementById('th-name');
+      if (thName) thName.textContent = translations.nameHeader;
+
+      const thSlug = document.getElementById('th-slug');
+      if (thSlug) thSlug.textContent = translations.slugHeader;
+
+      const thDescription = document.getElementById('th-description');
+      if (thDescription) thDescription.textContent = translations.descriptionHeader;
+
+      const thActions = document.getElementById('th-actions');
+      if (thActions) thActions.querySelector('span').textContent = translations.actionsHeader;
+
+      const noCategories = document.getElementById('no-categories');
+      if (noCategories) noCategories.textContent = translations.noCategories;
+
+      // تحديث عناوين التبويب
+      const firstPage = document.getElementById('first-page');
+      if (firstPage) firstPage.title = translations.firstPageTitle;
+
+      const prevPage = document.getElementById('prev-page');
+      if (prevPage) prevPage.title = translations.prevPageTitle;
+
+      const nextPage = document.getElementById('next-page');
+      if (nextPage) nextPage.title = translations.nextPageTitle;
+
+      const lastPage = document.getElementById('last-page');
+      if (lastPage) lastPage.title = translations.lastPageTitle;
+    }
+
+    // الاستماع لتغييرات اللغة من القالب الأساسي
+    function observeLanguageChanges() {
+      // مراقبة تغيير سمة dir في body
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'dir') {
+            updatePageTexts();
+          }
+        });
+      });
+
+      observer.observe(document.body, { attributes: true });
+    }
+
+    // تشغيل التحديث الأولي
+    updatePageTexts();
+    
+    // بدء مراقبة تغييرات اللغة
+    observeLanguageChanges();
+  });
+</script>
+{% endblock %}

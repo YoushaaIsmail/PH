@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}<span id="page-title">Delete Category</span>{% endblock %}
+
+{% block content %}
+<style>
+  .delete-card {
+    max-width: 500px;
+    margin: 4rem auto;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #ffffff;
+  }
+
+  /* تعديل المحاذاة للغة العربية */
+  body[dir="rtl"] .delete-card {
+    text-align: right;
+  }
+
+  body[dir="ltr"] .delete-card {
+    text-align: left;
+  }
+
+  .delete-card h3 {
+    color: #198754;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 700;
+  }
+
+  /* تعديل الأيقونات في الأزرار للغة العربية */
+  body[dir="rtl"] .delete-card .btn i {
+    margin-left: 0.5rem;
+    margin-right: 0;
+  }
+
+  .delete-card .btn-danger {
+    background-color: #dc3545;
+    border: none;
+    width: 48%;
+  }
+
+  .delete-card .btn-danger:hover {
+    background-color: #b02a37;
+  }
+
+  .delete-card .btn-secondary {
+    width: 48%;
+  }
+
+  .delete-card .btn-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  /* تعديل اتجاه الأزرار للغة العربية */
+  body[dir="rtl"] .delete-card .btn-group {
+    flex-direction: row-reverse;
+  }
+
+  /* تصميم رسالة التحذير */
+  .warning-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  body[dir="rtl"] .warning-message {
+    text-align: right;
+  }
+
+  .warning-message i {
+    color: #ffc107;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* تصميم تفاصيل الفئة */
+  .category-details {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #dc3545;
+  }
+
+  body[dir="rtl"] .category-details {
+    border-left: none;
+    border-right: 4px solid #dc3545;
+  }
+
+  .category-details p {
+    margin-bottom: 0.5rem;
+  }
+
+  .category-details strong {
+    color: #495057;
+  }
+</style>
+
+<div class="delete-card">
+    <!-- رسالة تحذير -->
+    <div class="warning-message" id="warning-message">
+        <i class="fa fa-exclamation-triangle"></i>
+        <p id="warning-text">This action cannot be undone!</p>
+    </div>
+
+    <!-- تفاصيل الفئة -->
+    <div class="category-details">
+        <h3 id="delete-question">Are you sure you want to delete "<strong>{{ category.name }}</strong>"?</h3>
+        <p id="category-name"><strong>Name:</strong> {{ category.name }}</p>
+        {% if category.slug %}
+        <p id="category-slug"><strong>Slug:</strong> {{ category.slug }}</p>
+        {% endif %}
+        {% if category.description %}
+        <p id="category-description"><strong>Description:</strong> {{ category.description|truncatewords:20 }}</p>
+        {% endif %}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="btn-group">
+            <!-- زر التأكيد مع هوية للترجمة -->
+            <button type="submit" class="btn btn-danger" id="confirm-delete-btn">
+                <i class="fa fa-trash me-1"></i> <span>Yes, Delete</span>
+            </button>
+            <!-- زر الإلغاء مع هوية للترجمة -->
+            <a href="{% url 'app:category_list' %}" class="btn btn-secondary" id="cancel-btn">
+                <i class="fa fa-times me-1"></i> <span>Cancel</span>
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+  // وظائف الترجمة لهذه الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // دالة لترجمة النصوص بناءً على اللغة
+    function updateDeleteTexts() {
+      const isRTL = document.body.dir === 'rtl';
+      const categoryName = "{{ category.name }}";
+      
+      const translations = {
+        pageTitle: isRTL ? 'حذف الفئة' : 'Delete Category',
+        warningText: isRTL ? 'هذا الإجراء لا يمكن التراجع عنه!' : 'This action cannot be undone!',
+        deleteQuestion: isRTL ? 
+          `هل أنت متأكد من رغبتك في حذف "<strong>${categoryName}</strong>"؟` : 
+          `Are you sure you want to delete "<strong>${categoryName}</strong>"?`,
+        categoryNameLabel: isRTL ? 'الاسم:' : 'Name:',
+        categorySlugLabel: isRTL ? 'الرابط:' : 'Slug:',
+        categoryDescriptionLabel: isRTL ? 'الوصف:' : 'Description:',
+        confirmButton: isRTL ? 'نعم، احذف' : 'Yes, Delete',
+        cancelButton: isRTL ? 'إلغاء' : 'Cancel'
+      };
+
+      // تحديث عنوان الصفحة
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = translations.pageTitle;
+
+      // تحديث رسالة التحذير
+      const warningText = document.getElementById('warning-text');
+      if (warningText) warningText.textContent = translations.warningText;
+
+      // تحديث سؤال الحذف
+      const deleteQuestion = document.getElementById('delete-question');
+      if (deleteQuestion) {
+        // نستخدم innerHTML لأن النص يحتوي على علامات HTML
+        deleteQuestion.innerHTML = translations.deleteQuestion;
+      }
+
+      // تحديث تسميات تفاصيل الفئة
+      const categoryNameLabel = document.getElementById('category-name');
+      if (categoryNameLabel) {
+        categoryNameLabel.innerHTML = `<strong>${translations.categoryNameLabel}</strong> ${categoryName}`;
+      }
+
+      const categorySlugLabel = document.getElementById('category-slug');
+      if (categorySlugLabel && "{{ category.slug }}") {
+        categorySlugLabel.innerHTML = `<strong>${translations.categorySlugLabel}</strong> {{ category.slug }}`;
+      }
+
+      const categoryDescriptionLabel = document.getElementById('category-description');
+      if (categoryDescriptionLabel && "{{ category.description }}") {
+        categoryDescriptionLabel.innerHTML = `<strong>${translations.categoryDescriptionLabel}</strong> {{ category.description|truncatewords:20 }}`;
+      }
+
+      // تحديث نصوص الأزرار
+      const confirmButton = document.getElementById('confirm-delete-btn');
+      if (confirmButton) {
+        confirmButton.querySelector('span').textContent = translations.confirmButton;
+        // تحديث عنوان الزر للمساعدة
+        confirmButton.title = isRTL ? 'حذف الفئة نهائياً' : 'Delete category permanently';
+      }
+
+      const cancelButton = document.getElementById('cancel-btn');
+      if (cancelButton) {
+        cancelButton.querySelector('span').textContent = translations.cancelButton;
+        // تحديث عنوان الزر للمساعدة
+        cancelButton.title = isRTL ? 'العودة إلى قائمة الفئات' : 'Back to categories list';
+      }
+
+      // تحديث عنوان علامة التبويب
+      document.title = isRTL ? 'حذف الفئة - لوحة التحكم' : 'Delete Category - Dashboard';
+    }
+
+    // مراقبة تغييرات اللغة
+    function observeLanguageChanges() {
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.attributeName === 'dir') {
+            updateDeleteTexts();
+          }
+        });
+      });
+
+      observer.observe(document.body, { attributes: true });
+    }
+
+    // تأكيد الحذف قبل الإرسال
+    function setupDeleteConfirmation() {
+      const deleteForm = document.querySelector('form');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+          const isRTL = document.body.dir === 'rtl';
+          const categoryName = "{{ category.name }}";
+          
+          const confirmationMessage = isRTL ? 
+            `هل أنت متأكد تماماً من حذف الفئة "${categoryName}"؟\nلا يمكن استعادة البيانات المحذوفة.` : 
+            `Are you absolutely sure you want to delete "${categoryName}"?\nDeleted data cannot be recovered.`;
+          
+          if (!confirm(confirmationMessage)) {
+            e.preventDefault();
+            return false;
+          }
+          return true;
+        });
+      }
+    }
+
+    // تشغيل الوظائف عند تحميل الصفحة
+    updateDeleteTexts();
+    observeLanguageChanges();
+    setupDeleteConfirmation();
+
+    // تحديث النصوص عند تغيير اللغة من القالب الأساسي
+    document.addEventListener('languageChanged', function() {
+      updateDeleteTexts();
+    });
+  });
+</script>
+{% endblock %}

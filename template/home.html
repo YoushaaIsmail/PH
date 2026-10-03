@@ -1,0 +1,589 @@
+{% extends 'base1.html' %}
+{% load static %}
+{% block content %}
+<section class="menu-page">
+    <div class="container">
+        <div class="menu-header">
+            <h1>Our Medicines Catalog</h1>
+            <p>Explore our wide selection of quality medicines</p>
+        </div>
+        
+        <!-- فلتر الفئات -->
+        <div class="filter-section">
+            <h3>Filter by Category:</h3>
+            <div class="filter-buttons">
+                <a href="?category=&ingredient={{ selected_ingredient_id }}" 
+                   class="filter-btn {% if not request.GET.category %}active{% endif %}">All Categories</a>
+                {% for cat in categories %}
+                    <a href="?category={{ cat.slug }}&ingredient={{ selected_ingredient_id }}" 
+                       class="filter-btn {% if request.GET.category == cat.slug %}active{% endif %}">
+                        {{ cat.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- فلتر المواد الفعالة -->
+        <div class="filter-section">
+            <h3>Filter by Active Ingredient:</h3>
+            <div class="filter-buttons">
+                <a href="?category={{ request.GET.category }}&ingredient=" 
+                   class="filter-btn {% if not selected_ingredient_id %}active{% endif %}">All Ingredients</a>
+                {% for ingredient in active_ingredients %}
+                    <a href="?category={{ request.GET.category }}&ingredient={{ ingredient.id }}" 
+                       class="filter-btn {% if selected_ingredient_id == ingredient.id|stringformat:'s' %}active{% endif %}">
+                        {{ ingredient.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- عرض عدد النتائج -->
+        <div class="results-info">
+            <p>
+                <i class="fas fa-capsules"></i>
+                Showing <strong>{{ medicines.count }}</strong> medicine{% if medicines.count != 1 %}s{% endif %}
+                {% if request.GET.category %}
+                    in category: <strong>
+                    {% for cat in categories %}
+                        {% if cat.slug == request.GET.category %}{{ cat.name }}{% endif %}
+                    {% endfor %}
+                    </strong>
+                {% endif %}
+                {% if selected_ingredient_id %}
+                    with active ingredient: <strong>
+                    {% for ing in active_ingredients %}
+                        {% if ing.id|stringformat:'s' == selected_ingredient_id %}{{ ing.name }}{% endif %}
+                    {% endfor %}
+                    </strong>
+                {% endif %}
+            </p>
+            {% if request.GET.category or selected_ingredient_id %}
+                <a href="{% url 'app:medicine_show' %}" class="clear-filters">
+                    <i class="fas fa-times"></i> Clear All Filters
+                </a>
+            {% endif %}
+        </div>
+        
+        <!-- شبكة الأدوية -->
+        <div class="food-grid" id="menuFoods">
+            {% for med in medicines %}
+                <div class="food-card">
+                    {% if med.image %}
+                        <img src="{{ med.image.url }}" alt="{{ med.name }}">
+                    {% else %}
+                        <img src="{% static 'img/default-medicine.jpg' %}" alt="{{ med.name }}">
+                    {% endif %}
+                    
+                    <div class="food-info">
+                        <div class="med-header">
+                            <h3>{{ med.name }}</h3>
+                            {% if med.prescription_required %}
+                                <span class="prescription-badge" title="Prescription Required">
+                                    <i class="fas fa-prescription"></i> Rx
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if med.brand %}
+                            <p class="med-brand"><i class="fas fa-tag"></i> {{ med.brand }}</p>
+                        {% endif %}
+                        
+                        {% if med.category %}
+                            <p class="med-category">
+                                <i class="fas fa-folder"></i> 
+                                <a href="?category={{ med.category.slug }}&ingredient={{ selected_ingredient_id }}">
+                                    {{ med.category.name }}
+                                </a>
+                            </p>
+                        {% endif %}
+                        
+                        {% if med.strength %}
+                            <p class="med-strength"><i class="fas fa-weight"></i> {{ med.strength }}</p>
+                        {% endif %}
+                        
+                        {% if med.form %}
+                            <p class="med-form"><i class="fas fa-pills"></i> {{ med.form }}</p>
+                        {% endif %}
+                        
+                        <!-- عرض المواد الفعالة مع روابط للفلترة -->
+                        {% if med.active_ingredients.exists %}
+                            <div class="ingredients-section">
+                                <p><strong><i class="fas fa-flask"></i> Active Ingredients:</strong></p>
+                                <div class="ingredient-tags">
+                                    {% for ingredient in med.active_ingredients.all %}
+                                        <a href="?category={{ request.GET.category }}&ingredient={{ ingredient.id }}" 
+                                           class="ingredient-tag {% if selected_ingredient_id == ingredient.id|stringformat:'s' %}active{% endif %}">
+                                            {{ ingredient.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="med-footer">
+                            <div class="price-availability">
+                                <span class="price">
+                                    <i class="fas fa-dollar-sign"></i> {{ med.price }}
+                                </span>
+                                
+                                <span class="availability {% if med.is_available %}in-stock{% else %}out-stock{% endif %}">
+                                    {% if med.is_available %}
+                                        <i class="fas fa-check-circle"></i> In Stock
+                                    {% else %}
+                                        <i class="fas fa-times-circle"></i> Out of Stock
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <div class="med-actions">
+                                {% if med.is_available %}
+                                    <a href="{% url 'app:medicine_detail' med.id %}" class="btn-view">
+                                        <i class="fas fa-info-circle"></i> Details
+                                    </a>
+                                {% endif %}
+                                
+                                <a href="{% url 'app:medicine_comments' med.id %}" class="btn-comment">
+                                    <i class="fas fa-comments"></i> Reviews
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-results">
+                    <div class="no-results-icon">
+                        <i class="fas fa-search fa-3x"></i>
+                    </div>
+                    <h3>No medicines found</h3>
+                    <p>No medicines match your current filters.</p>
+                    <div class="no-results-actions">
+                        <a href="{% url 'app:medicine_show' %}" class="btn btn-success">
+                            <i class="fas fa-undo"></i> Show All Medicines
+                        </a>
+                        <button onclick="clearFilters()" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<style>
+    /* تحسينات التصميم */
+    .menu-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 0;
+        background: linear-gradient(135deg, #198754, #28a745);
+        color: white;
+        border-radius: 15px;
+    }
+    
+    .menu-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    
+    .menu-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+    
+    .filter-section {
+        margin-bottom: 25px;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        border-left: 5px solid #198754;
+    }
+    
+    .filter-section h3 {
+        margin-bottom: 15px;
+        color: #198754;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .filter-section h3:before {
+        content: "✓";
+        background-color: #198754;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .filter-btn {
+        padding: 10px 20px;
+        background-color: white;
+        border: 2px solid #dee2e6;
+        border-radius: 25px;
+        text-decoration: none;
+        color: #495057;
+        font-weight: 500;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .filter-btn:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+        transform: translateY(-2px);
+    }
+    
+    .filter-btn.active {
+        background-color: #198754;
+        color: white;
+        border-color: #198754;
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+    }
+    
+    .results-info {
+        background: linear-gradient(to right, #e8f5e9, #d4edda);
+        padding: 20px;
+        border-radius: 10px;
+        margin: 25px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 5px solid #28a745;
+    }
+    
+    .results-info p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+    }
+    
+    .results-info strong {
+        color: #198754;
+    }
+    
+    .clear-filters {
+        background-color: #dc3545;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.3s;
+    }
+    
+    .clear-filters:hover {
+        background-color: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    }
+    
+    .food-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+    }
+    
+    .food-card {
+        background-color: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+        border: 1px solid #e9ecef;
+    }
+    
+    .food-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        border-color: #198754;
+    }
+    
+    .food-card img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-bottom: 3px solid #f8f9fa;
+    }
+    
+    .food-info {
+        padding: 25px;
+    }
+    
+    .med-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .med-header h3 {
+        font-size: 1.4rem;
+        color: #212529;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .prescription-badge {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .med-brand, .med-category, .med-strength, .med-form {
+        margin-bottom: 10px;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .med-category a {
+        color: #198754;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .med-category a:hover {
+        color: #146c43;
+        text-decoration: underline;
+    }
+    
+    .ingredients-section {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .ingredient-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    
+    .ingredient-tag {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        padding: 6px 12px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.3s;
+        border: 1px solid transparent;
+    }
+    
+    .ingredient-tag:hover {
+        background-color: #1976d2;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .ingredient-tag.active {
+        background-color: #1976d2;
+        color: white;
+        border-color: #1976d2;
+    }
+    
+    .med-footer {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #f8f9fa;
+    }
+    
+    .price-availability {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #198754;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .availability {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .in-stock {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .out-stock {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .med-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-view, .btn-comment {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-view {
+        background-color: #198754;
+        color: white;
+        border: 2px solid #198754;
+    }
+    
+    .btn-view:hover {
+        background-color: #146c43;
+        border-color: #146c43;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+    }
+    
+    .btn-comment {
+        background-color: white;
+        color: #6c757d;
+        border: 2px solid #6c757d;
+    }
+    
+    .btn-comment:hover {
+        background-color: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        grid-column: 1 / -1;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        border: 2px dashed #dee2e6;
+    }
+    
+    .no-results-icon {
+        margin-bottom: 20px;
+        color: #adb5bd;
+    }
+    
+    .no-results h3 {
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+    
+    .no-results p {
+        color: #868e96;
+        margin-bottom: 25px;
+    }
+    
+    .no-results-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+        .food-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-buttons {
+            justify-content: center;
+        }
+        
+        .results-info {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .price-availability {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .med-actions {
+            flex-direction: column;
+        }
+        
+        .no-results-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    function clearFilters() {
+        window.location.href = "{% url 'app:medicine_show' %}";
+    }
+    
+    // حفظ الفلاتر في localStorage لتجربة مستخدم أفضل
+    document.addEventListener('DOMContentLoaded', function() {
+        // حفظ الفلاتر الحالية
+        if (window.location.search) {
+            localStorage.setItem('medicineFilters', window.location.search);
+        }
+        
+        // إضافة تأثيرات للأزرار
+        const filterButtons = document.querySelectorAll('.filter-btn, .ingredient-tag');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // إضافة تأثير النقر
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 200);
+            });
+        });
+    });
+</script>
+{% endblock %}

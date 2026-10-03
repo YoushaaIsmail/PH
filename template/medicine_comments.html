@@ -1,0 +1,819 @@
+{% extends 'base1.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Comments Page - Modern Design */
+    .comments-container {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .comments-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* Header Section */
+    .medicine-header {
+        background: linear-gradient(135deg, #198754 0%, #16a34a 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(25, 135, 84, 0.15);
+        margin-bottom: 3rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .medicine-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,0 1000,50 1000,100 0,100"/></svg>');
+        background-size: cover;
+    }
+
+    .medicine-header h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+
+    .medicine-header .lead {
+        font-size: 1.25rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    .medicine-info {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        position: relative;
+    }
+
+    /* Messages */
+    .messages {
+        margin-bottom: 2rem;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 15px;
+        padding: 1.25rem 1.5rem;
+        font-weight: 500;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .alert::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: currentColor;
+        opacity: 0.3;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        color: #166534;
+        border-left-color: #22c55e;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #fef9c3, #fef08a);
+        color: #854d0e;
+        border-left-color: #eab308;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        color: #991b1b;
+        border-left-color: #ef4444;
+    }
+
+    /* Main Layout */
+    .comments-layout {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* Stats Section */
+    .stats-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 2rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        border-radius: 15px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e2e8f0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(135deg, #198754, #16a34a);
+    }
+
+    .stat-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(25, 135, 84, 0.15);
+        background: linear-gradient(135deg, #198754, #16a34a);
+        color: white;
+    }
+
+    .stat-count {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #198754;
+        transition: color 0.3s ease;
+    }
+
+    .stat-item:hover .stat-count {
+        color: white;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.8;
+    }
+
+    /* Comments List */
+    .comments-section {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .comments-header {
+        background: linear-gradient(135deg, #475569, #334155);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .comments-list {
+        padding: 2rem;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .comments-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .comments-list::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    .comments-list::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #198754, #16a34a);
+        border-radius: 4px;
+    }
+
+    /* Comment Cards */
+    .comment-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .comment-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: linear-gradient(135deg, #198754, #16a34a);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .comment-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        border-color: #198754;
+    }
+
+    .comment-card:hover::before {
+        opacity: 1;
+    }
+
+    .comment-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 3px solid #e2e8f0;
+        transition: border-color 0.3s ease;
+    }
+
+    .comment-card:hover .user-avatar {
+        border-color: #198754;
+    }
+
+    .user-avatar-default {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #198754, #16a34a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 1.25rem;
+        border: 3px solid #e2e8f0;
+        transition: border-color 0.3s ease;
+    }
+
+    .comment-card:hover .user-avatar-default {
+        border-color: #198754;
+    }
+
+    .comment-meta h6 {
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .comment-time {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Badges */
+    .badge {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 2px solid transparent;
+    }
+
+    .badge-review {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+    }
+
+    .badge-question {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: white;
+    }
+
+    .badge-suggestion {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+    }
+
+    .badge-general {
+        background: linear-gradient(135deg, #64748b, #475569);
+        color: white;
+    }
+
+    .comment-body {
+        padding: 1rem 1.5rem 1.5rem;
+    }
+
+    .comment-text {
+        color: #475569;
+        line-height: 1.7;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Empty State */
+    .empty-comments {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #64748b;
+    }
+
+    .empty-comments i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+        background: linear-gradient(135deg, #198754, #16a34a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .empty-comments h4 {
+        color: #1e293b;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    /* Comment Form */
+    .comment-form-section {
+        position: sticky;
+        top: 2rem;
+    }
+
+    .comment-form-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .comment-form-header {
+        background: linear-gradient(135deg, #475569, #334155);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .comment-form-body {
+        padding: 2rem;
+    }
+
+    .form-label {
+        color: #1e293b;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+        background: white;
+    }
+
+    textarea.form-control {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    .form-text {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #198754, #16a34a);
+        color: white;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(25, 135, 84, 0.4);
+        background: linear-gradient(135deg, #157347, #15803d);
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Login Required Card */
+    .login-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .login-card i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .comments-layout {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        
+        .comment-form-section {
+            position: static;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .medicine-header {
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+        
+        .medicine-header h1 {
+            font-size: 2.25rem;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            padding: 1.5rem;
+        }
+        
+        .comments-list {
+            padding: 1.5rem;
+            max-height: none;
+        }
+        
+        .comment-form-body {
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .medicine-header h1 {
+            font-size: 1.875rem;
+        }
+        
+        .comment-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .comment-meta {
+            text-align: left;
+        }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .comment-card {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .stat-item {
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    /* Loading states */
+    .btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .btn:disabled:hover {
+        transform: none !important;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.3) !important;
+    }
+</style>
+
+<div class="comments-container">
+    <div class="comments-content">
+        <!-- Display Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Medicine Header -->
+        <div class="medicine-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-3">
+                        <i class="fas fa-comments me-3"></i>Comments for {{ medicine.name }}
+                    </h1>
+                    <p class="lead mb-0">Share your experience and thoughts about this medicine</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="medicine-info">
+                        <small>
+                            <i class="fas fa-pills me-2"></i>Medicine ID: {{ medicine.id }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comments-layout">
+            <!-- Left Column - Comments Content -->
+            <div class="comments-main">
+                <!-- Comments Statistics -->
+                {% if comment_stats %}
+                <div class="stats-card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Comments Summary</h4>
+                    </div>
+                    <div class="stats-grid">
+                        {% for stat in comment_stats %}
+                        <div class="stat-item">
+                            <div class="stat-count">{{ stat.count }}</div>
+                            <div class="stat-label">{{ stat.type|title }}</div>
+                        </div>
+                        {% endfor %}
+                        <div class="stat-item">
+                            <div class="stat-count">{{ comments.count }}</div>
+                            <div class="stat-label">Total Comments</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Comments List -->
+                <div class="comments-section">
+                    <div class="comments-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-list me-2"></i>All Comments ({{ comments.count }})
+                        </h4>
+                    </div>
+                    <div class="comments-list">
+                        {% for comment in comments %}
+                        <div class="comment-card">
+                            <div class="comment-header">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="d-flex align-items-center">
+                                        {% if comment.comment_customer.photo %}
+                                        <img src="{{ comment.comment_customer.photo.url }}" 
+                                             alt="{{ comment.comment_customer.username }}" 
+                                             class="user-avatar me-3">
+                                        {% else %}
+                                        <div class="user-avatar-default me-3">
+                                            <span>{{ comment.comment_customer.username|first|upper }}</span>
+                                        </div>
+                                        {% endif %}
+                                        <div class="comment-meta">
+                                            <h6 class="mb-1">{{ comment.comment_customer.get_full_name|default:comment.comment_customer.username }}</h6>
+                                            <span class="badge badge-{{ comment.type }}">
+                                                <i class="fas fa-{% if comment.type == 'review' %}star{% elif comment.type == 'question' %}question{% elif comment.type == 'suggestion' %}lightbulb{% else %}comment{% endif %} me-1"></i>
+                                                {{ comment.type|title }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <small class="comment-time">
+                                        <i class="fas fa-clock me-1"></i>
+                                        {% if comment.created_at %}
+                                            {{ comment.created_at|timesince }} ago
+                                        {% else %}
+                                            Recently
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="comment-body">
+                                <p class="comment-text">{{ comment.text|linebreaks }}</p>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="empty-comments">
+                            <i class="fas fa-comment-slash"></i>
+                            <h4 class="mt-4">No Comments Yet</h4>
+                            <p class="text-muted">Be the first to share your thoughts about this medicine!</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Add Comment Form -->
+            <div class="comment-form-section">
+                {% if user.is_authenticated %}
+                <div class="comment-form-card">
+                    <div class="comment-form-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>Add Your Comment
+                        </h4>
+                    </div>
+                    <div class="comment-form-body">
+                        <form method="post" action="{% url 'app:add_comment' medicine.id %}">
+                            {% csrf_token %}
+                            
+                            <div class="mb-4">
+                                <label for="text" class="form-label">
+                                    <i class="fas fa-comment-dots me-2"></i>Your Comment
+                                </label>
+                                <textarea class="form-control" id="text" name="text" rows="6" 
+                                          placeholder="Share your experience, ask questions, or provide suggestions about {{ medicine.name }}..." 
+                                          required></textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Be respectful and helpful to other users.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Comment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="login-card">
+                    <i class="fas fa-user-lock"></i>
+                    <h4 class="mb-3">Login Required</h4>
+                    <p class="text-muted mb-4">Please login to add your comment and join the discussion.</p>
+                    <a href="{% url 'login' %}" class="btn btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login Now
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Enhanced interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Character counter with visual feedback
+    const textarea = document.getElementById('text');
+    if (textarea) {
+        const counter = document.createElement('div');
+        counter.className = 'form-text d-flex justify-content-between align-items-center mt-2';
+        counter.innerHTML = `
+            <span>
+                <i class="fas fa-keyboard me-1"></i>
+                <span id="charCount">0</span> characters
+            </span>
+            <span id="charLimit" class="text-muted">Minimum 10 characters</span>
+        `;
+        textarea.parentNode.appendChild(counter);
+        
+        textarea.addEventListener('input', function() {
+            const count = this.value.length;
+            document.getElementById('charCount').textContent = count;
+            
+            // Visual feedback
+            const charLimit = document.getElementById('charLimit');
+            if (count < 10) {
+                charLimit.innerHTML = '<i class="fas fa-exclamation-circle me-1 text-warning"></i>Minimum 10 characters';
+            } else if (count > 500) {
+                charLimit.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-danger"></i>Too long!';
+            } else {
+                charLimit.innerHTML = '<i class="fas fa-check-circle me-1 text-success"></i>Good length';
+            }
+        });
+    }
+    
+    // Enhanced comment card interactions
+    const commentCards = document.querySelectorAll('.comment-card');
+    commentCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.closest('a') && !e.target.closest('button')) {
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            }
+        });
+    });
+    
+    // Smooth scroll to comments section
+    const commentLinks = document.querySelectorAll('a[href="#comments"]');
+    commentLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelector('#comments').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
+    });
+    
+    // Add loading state to form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+                submitBtn.disabled = true;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

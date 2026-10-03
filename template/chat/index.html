@@ -1,0 +1,411 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Private Chats" %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* CSS Variables for light/white theme */
+    :root {
+        --chat-primary: #ffffff;
+        --chat-primary-light: #f8f9fa;
+        --chat-accent: #25d366;
+        --chat-accent-dark: #075e54;
+        --chat-bg: #f5f7fb;
+        --chat-card-bg: #ffffff;
+        --chat-border: #e9ecef;
+        --chat-hover: #f8f9fa;
+        --chat-text: #2c3e50;
+        --chat-text-muted: #6c757d;
+        --chat-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --chat-header-bg: #075e54;
+        --chat-header-text: #ffffff;
+    }
+
+    .last-message {
+        font-size: 0.8rem;
+        color: var(--chat-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.2rem;
+    }
+
+    .message-time {
+        font-size: 0.7rem;
+        color: #9aa6b5;
+    }
+
+    .unread-badge {
+        color: var(--chat-accent);
+        font-size: 0.8rem;
+        margin-left: 0.25rem;
+    }
+
+    body[dir="rtl"] .unread-badge {
+        margin-left: 0;
+        margin-right: 0.25rem;
+    }
+
+    .chat-users-container {
+        max-width: 720px;
+        margin: 1.5rem auto;
+        background: var(--chat-card-bg);
+        border-radius: 20px;
+        box-shadow: var(--chat-shadow);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid var(--chat-border);
+    }
+
+    .chat-header {
+        background: var(--chat-header-bg);
+        color: var(--chat-header-text);
+        padding: 1rem 1.75rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .chat-header i {
+        font-size: 1.4rem;
+        color: white;
+    }
+
+    .chat-header span {
+        color: white;
+    }
+
+    .user-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    /* Custom scrollbar */
+    .user-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .user-list::-webkit-scrollbar-track {
+        background: var(--chat-border);
+        border-radius: 10px;
+    }
+
+    .user-list::-webkit-scrollbar-thumb {
+        background: var(--chat-accent-dark);
+        border-radius: 10px;
+    }
+
+    .user-item {
+        display: flex;
+        align-items: center;
+        padding: 0.9rem 1.5rem;
+        border-bottom: 1px solid var(--chat-border);
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .user-item:hover {
+        background: var(--chat-hover);
+        transform: translateX(4px);
+    }
+
+    body[dir="rtl"] .user-item:hover {
+        transform: translateX(-4px);
+    }
+
+    a.user-link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    .user-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #075e54, #128c7e);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.35rem;
+        font-weight: 600;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+
+    .user-item:hover .user-avatar {
+        transform: scale(1.02);
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .user-name {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        color: var(--chat-text);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .user-status {
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--chat-text-muted);
+        margin-bottom: 4px;
+    }
+
+    .status-online {
+        color: var(--chat-accent);
+        font-size: 0.55rem;
+    }
+
+    /* Empty state styling */
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+        color: var(--chat-text-muted);
+        background: var(--chat-card-bg);
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+        color: var(--chat-text-muted);
+    }
+
+    .empty-state p {
+        margin-bottom: 0.5rem;
+    }
+
+    /* RTL specific adjustments */
+    body[dir="rtl"] .user-item:hover {
+        transform: translateX(-4px);
+    }
+
+    body[dir="rtl"] .user-info {
+        text-align: right;
+    }
+
+    body[dir="rtl"] .user-status {
+        justify-content: flex-end;
+    }
+
+    body[dir="rtl"] .user-name {
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 640px) {
+        .chat-users-container {
+            margin: 1rem;
+            border-radius: 16px;
+        }
+        .user-item {
+            padding: 0.75rem 1rem;
+        }
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            font-size: 1.1rem;
+        }
+        .chat-header {
+            padding: 0.85rem 1.25rem;
+            font-size: 1.1rem;
+        }
+    }
+
+    .unread-badge-count {
+        background-color: var(--chat-accent);
+        color: white;
+        border-radius: 20px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+        min-width: 20px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    body[dir="rtl"] .unread-badge-count {
+        margin-left: 0;
+        margin-right: 8px;
+    }
+
+    .last-message {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .unread-indicator {
+        color: var(--chat-accent);
+        font-size: 10px;
+        margin-left: 4px;
+    }
+
+    body[dir="rtl"] .unread-indicator {
+        margin-left: 0;
+        margin-right: 4px;
+    }
+
+    /* Loading state */
+    .loading-spinner {
+        text-align: center;
+        padding: 2rem;
+        color: var(--chat-text-muted);
+    }
+
+    .loading-spinner i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-users-container">
+    <div class="chat-header">
+        <i class="fas fa-comments"></i>
+        <span>{% trans "Private Chats" %}</span>
+    </div>
+    <div id="chat-list-container">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner"></i>
+            <div>{% trans "Loading..." %}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentUser = "{{ request.user.username }}";
+    let refreshInterval = null;
+
+    function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return '{% trans "Just now" %}';
+        if (diffMins < 60) return `${diffMins} {% trans "min ago" %}`;
+        if (diffHours < 24) return `${diffHours} {% trans "hours ago" %}`;
+        if (diffDays < 7) return `${diffDays} {% trans "days ago" %}`;
+        return date.toLocaleDateString();
+    }
+
+    function fetchAndRender() {
+        fetch('/chat/api/users/')
+            .then(response => response.json())
+            .then(users => {
+                const container = document.getElementById('chat-list-container');
+                if (!users || !users.length) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="far fa-comment-dots"></i>
+                            <p>{% trans "No other users found" %}</p>
+                            <small>{% trans "Start by inviting friends or colleagues" %}</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '<ul class="user-list">';
+                users.forEach(user => {
+                    const lastMsg = user.last_message_content ? user.last_message_content.substring(0, 35) : '';
+                    const timeStr = user.last_message_timestamp ? formatTime(user.last_message_timestamp) : '';
+                    const isSentByMe = (user.last_message_sender === currentUser);
+                    const unreadBadge = (user.unread_count > 0) ? `<span class="unread-badge-count">${user.unread_count}</span>` : '';
+                    const unreadIndicator = (!user.last_message_is_read && !isSentByMe && user.last_message_content) ? '<span class="unread-indicator">●</span>' : '';
+
+                    html += `
+                        <li class="user-item">
+                            <a href="/chat/chat/${user.id}/" class="user-link">
+                                <div class="user-avatar">${escapeHtml(user.avatar_initial)}</div>
+                                <div class="user-info">
+                                    <div class="user-name">
+                                        ${escapeHtml(user.username)} 
+                                        ${unreadBadge}
+                                    </div>
+                                    <div class="user-status">
+                                        ${user.is_online ? '<i class="fas fa-circle status-online"></i><span>{% trans "Online" %}</span>' : ''}
+                                    </div>
+                                    <div class="last-message">
+                                        ${user.last_message_content ? (isSentByMe ? '<span style="font-weight:500;">{% trans "You:" %}</span>' : '') : ''}
+                                        <span style="${!user.last_message_is_read && !isSentByMe && user.last_message_content ? 'font-weight:500; color:#075e54;' : ''}">${escapeHtml(lastMsg) || '{% trans "No messages yet" %}'}</span>
+                                        ${timeStr ? `<span class="message-time">${timeStr}</span>` : ''}
+                                        ${unreadIndicator}
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error fetching chat list:', err);
+                const container = document.getElementById('chat-list-container');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>{% trans "Error loading chats" %}</p>
+                        <small>{% trans "Please refresh the page" %}</small>
+                    </div>
+                `;
+            });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Initial load and set interval (every 5 seconds)
+    fetchAndRender();
+    refreshInterval = setInterval(fetchAndRender, 5000);
+
+    // Cleanup interval on page unload (optional)
+    window.addEventListener('beforeunload', function() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    });
+</script>
+{% endblock %}

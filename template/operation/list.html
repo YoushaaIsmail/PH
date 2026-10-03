@@ -1,0 +1,804 @@
+{% extends 'base.html' %}
+{% block title %}Operation Money List{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #f8f9fa;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+  }
+
+  .table th {
+    color: #198754;
+    font-weight: 600;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+    padding: 12px 8px;
+  }
+
+  .card-custom {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(25, 135, 84, 0.1);
+    border: 1px solid rgba(25, 135, 84, 0.1);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #198754, #146c43);
+    color: white;
+    padding: 1.5rem;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .btn-light.text-primary {
+    color: #198754 !important;
+    border: 2px solid #198754;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-light.text-primary:hover {
+    background-color: #198754;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+  }
+
+  .table thead {
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.1), rgba(25, 135, 84, 0.05));
+    border-bottom: 2px solid #198754;
+  }
+
+  .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #198754, #146c43);
+    border-color: #198754;
+  }
+
+  .pagination .page-link {
+    color: #198754;
+    border: 1px solid rgba(25, 135, 84, 0.2);
+    margin: 0 2px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #198754;
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .input-group .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #198754, #146c43);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #146c43, #0f5132);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+  }
+
+  /* Status Badges */
+  .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .status-pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #856404;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+  }
+
+  .status-success {
+    background-color: rgba(25, 135, 84, 0.15);
+    color: #0f5132;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+  }
+
+  .status-failed {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #721c24;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+  }
+
+  /* Method Badges */
+  .method-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .method-add {
+    background-color: rgba(25, 135, 84, 0.15);
+    color: #0f5132;
+    border: 1px solid rgba(25, 135, 84, 0.3);
+  }
+
+  .method-withdraw {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #721c24;
+    border: 1px solid rgba(220, 53, 69, 0.3);
+  }
+
+  /* Type Badges */
+  .type-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #0f5132;
+    border: 1px solid rgba(25, 135, 84, 0.2);
+  }
+
+  /* Amount Styling */
+  .amount-positive {
+    color: #198754;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .amount-negative {
+    color: #dc3545;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  /* Action Buttons */
+  .btn-action {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Filter Section */
+  .filter-section {
+    background: rgba(25, 135, 84, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(25, 135, 84, 0.1);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .table-responsive {
+      font-size: 0.9rem;
+    }
+    
+    .btn-action {
+      padding: 4px 8px;
+      font-size: 0.8rem;
+    }
+    
+    .status-badge, .method-badge, .type-badge {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+    }
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    color: rgba(25, 135, 84, 0.3);
+    margin-bottom: 20px;
+  }
+
+  /* Date Styling */
+  .date-cell {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+
+  .date-main {
+    font-weight: 600;
+    color: #198754;
+  }
+
+  .date-time {
+    font-size: 0.8rem;
+    color: #868e96;
+  }
+
+  /* Modal Styles */
+  .modal-content {
+    border-radius: 15px;
+    border: 1px solid rgba(25, 135, 84, 0.1);
+    box-shadow: 0 20px 60px rgba(25, 135, 84, 0.2);
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #198754, #146c43);
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .img-thumbnail {
+    border: 2px dashed rgba(25, 135, 84, 0.2);
+    border-radius: 8px;
+    padding: 4px;
+    max-height: 200px;
+  }
+
+  /* Summary Cards */
+  .summary-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .bg-primary { background: linear-gradient(135deg, #198754, #146c43) !important; }
+  .bg-success { background: linear-gradient(135deg, #198754, #146c43) !important; }
+  .bg-warning { background: linear-gradient(135deg, #fd7e14, #e55a00) !important; }
+  .bg-info { background: linear-gradient(135deg, #0dcaf0, #0baccc) !important; }
+
+  /* Form Controls */
+  .form-control, .form-select {
+    border: 1px solid rgba(25, 135, 84, 0.2);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
+  }
+
+  /* Alert Colors */
+  .alert-success {
+    background-color: rgba(25, 135, 84, 0.15);
+    border-color: rgba(25, 135, 84, 0.3);
+    color: #0f5132;
+  }
+
+  .alert-danger {
+    background-color: rgba(220, 53, 69, 0.15);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #721c24;
+  }
+
+  .alert-warning {
+    background-color: rgba(255, 193, 7, 0.15);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: #856404;
+  }
+
+  /* Button Variants */
+  .btn-outline-success {
+    color: #198754;
+    border-color: #198754;
+  }
+
+  .btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+  }
+
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+  }
+
+  .btn-outline-warning {
+    color: #fd7e14;
+    border-color: #fd7e14;
+  }
+
+  .btn-outline-warning:hover {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+  }
+
+  .btn-outline-info {
+    color: #0dcaf0;
+    border-color: #0dcaf0;
+  }
+
+  .btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+  }
+
+  .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+  }
+
+  /* Code styling */
+  code {
+    background: rgba(25, 135, 84, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: #198754;
+  }
+
+  /* Text colors */
+  .text-primary { color: #198754 !important; }
+  .text-success { color: #198754 !important; }
+  .text-danger { color: #dc3545 !important; }
+  .text-warning { color: #fd7e14 !important; }
+</style>
+
+<div class="container-fluid py-4">
+  <div class="card card-custom mb-4">
+    <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center">
+        <i class="fas fa-money-bill-wave me-2 fs-4"></i>
+        <h4 class="mb-0 fw-bold">Financial Operations</h4>
+      </div>
+    </div>
+
+    <div class="card-body bg-white">
+      <!-- 🔍 Search & Filters -->
+      <div class="filter-section">
+        <form method="get" class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold" style="color: #198754;">Search</label>
+            <div class="input-group shadow-sm">
+              <input type="text" name="q" class="form-control" 
+                     placeholder="Search by code, account..." value="{{ request.GET.q }}"
+                     style="border-color: rgba(25, 135, 84, 0.2);">
+              <button class="btn btn-primary" type="submit">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label fw-semibold" style="color: #198754;">Method</label>
+            <select name="method" class="form-select" style="border-color: rgba(25, 135, 84, 0.2);">
+              <option value="">All Methods</option>
+              <option value="Add" {% if request.GET.method == 'Add' %}selected{% endif %}>Add Money</option>
+              <option value="Withdraw" {% if request.GET.method == 'Withdraw' %}selected{% endif %}>Withdraw</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3">
+            <label class="form-label fw-semibold" style="color: #198754;">Status</label>
+            <select name="status" class="form-select" style="border-color: rgba(25, 135, 84, 0.2);">
+              <option value="">All Status</option>
+              <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="Success" {% if request.GET.status == 'Success' %}selected{% endif %}>Success</option>
+              <option value="Failed" {% if request.GET.status == 'Failed' %}selected{% endif %}>Failed</option>
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-filter me-1"></i> Filter
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 📊 Summary Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card summary-card bg-primary text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="card-title mb-1">Total Operations</h6>
+                  <h3 class="mb-0">{{ operations.count }}</h3>
+                </div>
+                <i class="fas fa-list-alt fs-1 opacity-50"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card summary-card bg-success text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="card-title mb-1">Total Added</h6>
+                  <h3 class="mb-0">${{ total_added|default:"0"|floatformat:2 }}</h3>
+                </div>
+                <i class="fas fa-plus-circle fs-1 opacity-50"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card summary-card bg-warning text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="card-title mb-1">Total Withdrawn</h6>
+                  <h3 class="mb-0">${{ total_withdrawn|default:"0"|floatformat:2 }}</h3>
+                </div>
+                <i class="fas fa-minus-circle fs-1 opacity-50"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card summary-card bg-info text-white">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="card-title mb-1">Pending</h6>
+                  <h3 class="mb-0">{{ pending_count|default:"0" }}</h3>
+                </div>
+                <i class="fas fa-clock fs-1 opacity-50"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📋 Table -->
+      {% if operations %}
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle" style="background-color: #ffffff;">
+          <thead class="text-center">
+            <tr>
+              <th>Date & Time</th>
+              <th>Type</th>
+              <th>Method</th>
+              <th>Amount</th>
+              <th>Account</th>
+              <th>Reference Code</th>
+              <th>Status</th>
+              <th><i class="fas fa-cogs me-1"></i> Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for operation in operations %}
+            <tr class="text-center">
+              <td class="date-cell">
+                <div class="date-main">{{ operation.Date1|date:"M d, Y" }}</div>
+                <div class="date-time">{{ operation.Date1|date:"H:i A" }}</div>
+              </td>
+              <td>
+                <span class="type-badge">{{ operation.type }}</span>
+              </td>
+              <td>
+                <span class="method-badge method-{{ operation.Method|lower }}">
+                  <i class="fas fa-{% if operation.Method == 'Add' %}plus{% else %}minus{% endif %}-circle me-1"></i>
+                  {{ operation.Method }}
+                </span>
+              </td>
+              <td>
+                <span class="{% if operation.Method == 'Add' %}amount-positive{% else %}amount-negative{% endif %}">
+                  {% if operation.Method == 'Add' %}+{% else %}-{% endif %}${{ operation.Amount|floatformat:2 }}
+                </span>
+              </td>
+              <td>
+                <code>{{ operation.Account|default:"—" }}</code>
+              </td>
+              <td>
+                <small class="text-muted">{{ operation.code|default:"—" }}</small>
+              </td>
+              <td>
+                <span class="status-badge status-{{ operation.state|lower }}">
+                  <i class="fas fa-{% if operation.state == 'Success' %}check-circle{% elif operation.state == 'pending' %}clock{% else %}times-circle{% endif %} me-1"></i>
+                  {{ operation.state }}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                  {% if operation.state == 'pending' %}
+                    {% if operation.Method == 'Withdraw' and not operation.image and not operation.code %}
+                      <!-- For Withdrawal without image/code - Show modal button -->
+                      <button type="button" class="btn btn-action btn-outline-success" title="Add Details & Approve" 
+                              data-bs-toggle="modal" data-bs-target="#withdrawModal{{ operation.pk }}">
+                        <i class="fas fa-check"></i>
+                      </button>
+                    {% else %}
+                      <!-- For Add operations or Withdrawals with existing image/code -->
+                      <form method="POST" action="{% url 'app:operation_approve1' operation.pk %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-action btn-outline-success" title="Approve" 
+                                onclick="return confirm('Are you sure you want to approve this operation?')">
+                          <i class="fas fa-check"></i>
+                        </button>
+                      </form>
+                    {% endif %}
+                    
+                    <!-- Reject Button -->
+                    <form method="POST" action="{% url 'app:operation_reject1' operation.pk %}" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-action btn-outline-danger" title="Reject"
+                              onclick="return confirm('Are you sure you want to reject this operation?')">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </form>
+                  {% else %}
+                    <!-- For processed operations -->
+                    {% if operation.state == 'Failed' %}
+                      <!-- Edit button for rejected operations -->
+                      <a href="{% url 'app:operation_edit' operation.pk %}" class="btn btn-action btn-outline-warning" title="Edit & Resubmit">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                    {% endif %}
+                    <!-- View Details Button -->
+                    <a href="#" class="btn btn-action btn-outline-info" title="View Details">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                  {% endif %}
+
+                  <!-- Delete Button (always visible) -->
+                  <form method="POST" action="#" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-action btn-outline-danger" title="Delete"
+                            onclick="return confirm('Are you sure you want to delete this operation?')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </form>
+
+                  <!-- View Image Button -->
+                  {% if operation.image %}
+                    <a href="{{ operation.image.url }}" target="_blank" class="btn btn-action btn-outline-secondary" title="View Proof">
+                      <i class="fas fa-image"></i>
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+
+            <!-- Modal for Withdrawal Details -->
+            {% if operation.Method == 'Withdraw' and not operation.image and not operation.code %}
+            <div class="modal fade" id="withdrawModal{{ operation.pk }}" tabindex="-1" aria-labelledby="withdrawModalLabel{{ operation.pk }}" aria-hidden="true">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="withdrawModalLabel{{ operation.pk }}">
+                      <i class="fas fa-money-bill-wave me-2"></i>Approve Withdrawal
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <form method="POST" action="{% url 'app:operation_approve_withdraw' operation.pk %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                      <!-- Operation Summary -->
+                      <div class="card mb-4">
+                        <div class="card-header bg-light">
+                          <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Withdrawal Summary</h6>
+                        </div>
+                        <div class="card-body">
+                          <div class="row">
+                            <div class="col-md-6">
+                              <strong style="color: #198754;">Account:</strong>
+                              <p class="fw-bold" style="color: #198754;">{{ operation.Account|default:"Not provided" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                              <strong style="color: #198754;">Amount:</strong>
+                              <p class="fw-bold" style="color: #dc3545;">${{ operation.Amount|floatformat:2 }}</p>
+                            </div>
+                            <div class="col-md-6">
+                              <strong style="color: #198754;">Type:</strong>
+                              <p><span class="badge" style="background: rgba(25, 135, 84, 0.1); color: #198754;">{{ operation.type }}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                              <strong style="color: #198754;">Current Balance:</strong>
+                              <p class="fw-bold" style="color: #198754;">${{ operation.MyAccount.Amount|floatformat:2 }}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Required Details Form -->
+                      <div class="card">
+                        <div class="card-header alert-warning">
+                          <h6 class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>Required Details</h6>
+                        </div>
+                        <div class="card-body">
+                          <!-- Transaction Code -->
+                          <div class="mb-3">
+                            <label for="transactionCode{{ operation.pk }}" class="form-label fw-semibold" style="color: #198754;">
+                              <i class="fas fa-receipt me-1"></i>Transaction Code *
+                            </label>
+                            <input type="text" class="form-control" id="transactionCode{{ operation.pk }}" 
+                                   name="transaction_code" required placeholder="Enter transaction code">
+                            <div class="form-text">Enter the bank transaction code or reference number.</div>
+                          </div>
+
+                          <!-- Proof Image -->
+                          <div class="mb-3">
+                            <label for="proofImage{{ operation.pk }}" class="form-label fw-semibold" style="color: #198754;">
+                              <i class="fas fa-image me-1"></i>Proof Image *
+                            </label>
+                            <input type="file" class="form-control" id="proofImage{{ operation.pk }}" 
+                                   name="proof_image" accept="image/*,.pdf" required>
+                            <div class="form-text">Upload proof of transaction (screenshot, receipt, etc.)</div>
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreview{{ operation.pk }}" class="mt-2 text-center" style="display: none;">
+                              <img id="preview{{ operation.pk }}" src="#" alt="Preview" class="img-thumbnail">
+                            </div>
+                          </div>
+
+                          <!-- Additional Notes -->
+                          <div class="mb-3">
+                            <label for="notes{{ operation.pk }}" class="form-label fw-semibold" style="color: #198754;">
+                              <i class="fas fa-sticky-note me-1"></i>Additional Notes (Optional)
+                            </label>
+                            <textarea class="form-control" id="notes{{ operation.pk }}" name="notes" 
+                                     rows="3" placeholder="Add any additional notes..."></textarea>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Balance Check - FIXED -->
+                      <div class="alert {% if operation.MyAccount.Amount >= operation.Amount %}alert-success{% else %}alert-danger{% endif %} mt-3">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <strong>Current Balance:</strong>
+                            <br>
+                            <span class="fw-bold">${{ operation.MyAccount.Amount|floatformat:2 }}</span>
+                          </div>
+                          <div class="col-md-6">
+                            <strong>After Withdrawal:</strong>
+                            <br>
+                            <span class="fw-bold {% if operation.MyAccount.Amount >= operation.Amount %}text-success{% else %}text-danger{% endif %}">
+                              ${{ operation.MyAccount.Amount|add:"-"|add:operation.Amount|floatformat:2 }}
+                            </span>
+                          </div>
+                        </div>
+                        {% if operation.MyAccount.Amount < operation.Amount %}
+                        <div class="mt-2">
+                          <i class="fas fa-exclamation-triangle me-1"></i>
+                          <strong>Insufficient balance!</strong> Cannot approve this withdrawal.
+                        </div>
+                        {% endif %}
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                      </button>
+                      <button type="submit" class="btn btn-success" 
+                              {% if operation.MyAccount.Amount < operation.Amount %}disabled{% endif %}>
+                        <i class="fas fa-check me-1"></i>
+                        {% if operation.MyAccount.Amount >= operation.Amount %}
+                          Approve Withdrawal
+                        {% else %}
+                          Insufficient Balance
+                        {% endif %}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- JavaScript for Image Preview -->
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              const proofImage{{ operation.pk }} = document.getElementById('proofImage{{ operation.pk }}');
+              const preview{{ operation.pk }} = document.getElementById('preview{{ operation.pk }}');
+              const imagePreview{{ operation.pk }} = document.getElementById('imagePreview{{ operation.pk }}');
+
+              proofImage{{ operation.pk }}.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = function(e) {
+                    preview{{ operation.pk }}.src = e.target.result;
+                    imagePreview{{ operation.pk }}.style.display = 'block';
+                  }
+                  reader.readAsDataURL(file);
+                } else {
+                  imagePreview{{ operation.pk }}.style.display = 'none';
+                }
+              });
+            });
+            </script>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 🔽 Pagination -->
+      {% if page_obj.has_other_pages %}
+      <nav class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-sm">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.method %}method={{ request.GET.method }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page=1" title="First">
+                <i class="fas fa-angles-left"></i>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.method %}method={{ request.GET.method }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.previous_page_number }}" title="Previous">
+                <i class="fas fa-chevron-left"></i>
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-left"></i></span></li>
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left"></i></span></li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li class="page-item"><a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.method %}method={{ request.GET.method }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.method %}method={{ request.GET.method }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.next_page_number }}" title="Next">
+                <i class="fas fa-chevron-right"></i>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.method %}method={{ request.GET.method }}&{% endif %}{% if request.GET.status %}status={{ request.GET.status }}&{% endif %}page={{ page_obj.paginator.num_pages }}" title="Last">
+                <i class="fas fa-angles-right"></i>
+              </a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-right"></i></span></li>
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-right"></i></span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+      <!-- 🔼 Pagination End -->
+
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-money-bill-wave"></i>
+        <h4 class="text-muted">No operations found</h4>
+        <p class="text-muted">No financial operations match your search criteria.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

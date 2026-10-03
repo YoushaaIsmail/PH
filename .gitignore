@@ -1,0 +1,64 @@
+# ============ Django / Python ============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.venv/
+ENV/
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ============ Database ============
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
+
+# ============ Django media & static (user uploaded) ============
+media/
+/staticfiles/
+staticfiles/
+
+# ============ Environment ============
+.env
+.env.*
+!.env.example
+
+# ============ ML Models (كبيرة الحجم) ============
+sentiment_model/
+*.h5
+*.pb
+*.onnx
+*.pt
+*.pth
+*.bin
+*.pkl
+*.joblib
+*.safetensors
+*.ckpt
+
+# ============ Logs ============
+*.log
+logs/
+
+# ============ Coverage / Testing ============
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ============ IDE ============
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# ============ OS ============
+.DS_Store
+Thumbs.db
+desktop.ini

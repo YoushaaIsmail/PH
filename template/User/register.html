@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Register</h1>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- User Form -->
+      <h3 style="color: white;">Account Information</h3>
+
+      <div class="input-group">
+        <i class="fa fa-user"></i>
+        {{ user_form.username }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-id-card"></i>
+        {{ user_form.first_name }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-id-card"></i>
+        {{ user_form.last_name }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-envelope"></i>
+        {{ user_form.email }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-lock"></i>
+        {{ user_form.password1 }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-lock"></i>
+        {{ user_form.password2 }}
+      </div>
+
+      <!-- Customer Address Form
+      <h3>Address Information</h3>
+
+      <div class="input-group">
+        <i class="fa fa-tag"></i>
+        {{ person_form.label }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-map-marker"></i>
+        {{ person_form.address_line }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-building"></i>
+        {{ person_form.city }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-envelope-o"></i>
+        {{ person_form.postal_code }}
+      </div>
+
+      <div class="input-group">
+        <i class="fa fa-phone"></i>
+        {{ person_form.phone }}
+      </div>
+
+      <div class="input-group">
+        <label>
+          {{ person_form.is_default }} Set as Default Address
+        </label>
+      </div> -->
+
+      <button type="submit">Register</button>
+    </form>
+
+    {% if user_form.errors %}
+      <div style="color:red; margin-top:10px;">
+        <h4>Errors:</h4>
+        {{ user_form.errors }}
+      
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

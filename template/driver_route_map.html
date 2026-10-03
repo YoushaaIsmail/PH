@@ -1,0 +1,491 @@
+<!-- templates/driver/driver_route_map.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Route - Order #{{ order.id }}</title>
+    
+    <!-- TomTom Maps CSS -->
+    <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-card h3 {
+            color: #333;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .info-card p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .map-container {
+            height: 600px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .route-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .route-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-processing { background: #fbbf24; color: #78350f; }
+        .status-ready { background: #60a5fa; color: #1e3a8a; }
+        .status-delivering { background: #8b5cf6; color: #4c1d95; }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .map-container {
+                height: 400px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 Delivery Route - Order #{{ order.id }}</h1>
+            <p>Navigate to delivery location efficiently</p>
+        </div>
+        
+        <div class="order-info">
+            <div class="info-card">
+                <h3>Customer</h3>
+                <p>{{ user_name }}</p>
+            </div>
+            
+            <div class="info-card">
+                <h3>Order Status</h3>
+                <p>
+                    <span class="status-badge status-{{ order.status }}">
+                        {{ order.get_status_display }}
+                    </span>
+                </p>
+            </div>
+            
+            <div class="info-card">
+                <h3>Delivery Fee</h3>
+                <p>${{ delivery_fee }}</p>
+            </div>
+            
+            <div class="info-card">
+                <h3>Driver</h3>
+                <p>{{ driver.user.username }}</p>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <h3>Route Controls</h3>
+            <p>Click on markers for details. Route will be calculated automatically.</p>
+            
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="getRoute()">
+                    🗺️ Refresh Route
+                </button>
+                
+                {% if order.status == 'ready' or order.status == 'delivering' %}
+                <form method="POST" action="{% url 'update_order_status' order.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    {% if order.status == 'ready' %}
+                    <button type="submit" name="status" value="delivering" class="btn btn-success">
+                        🚚 Start Delivery
+                    </button>
+                    {% elif order.status == 'delivering' %}
+                    <button type="submit" name="status" value="completed" class="btn btn-success">
+                        ✅ Mark as Delivered
+                    </button>
+                    {% endif %}
+                </form>
+                {% endif %}
+                
+                <button class="btn btn-primary" onclick="getDirections()">
+                    📱 Get Directions
+                </button>
+                
+                <a href="{% url 'driver_dashboard' %}" class="btn">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            <div id="loading" class="loading" style="display: none;">
+                <p>Loading route...</p>
+            </div>
+        </div>
+        
+        <div class="route-info">
+            <h3>Route Information</h3>
+            <div id="route-details" class="route-details">
+                <!-- Route details will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- TomTom Maps SDK -->
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/services/services-web.min.js"></script>
+    
+    <script>
+        // Initialize variables
+        const tomtomKey = '{{ tomtom_api_key }}';
+        const driverLocation = [{{ driver_location.y }}, {{ driver_location.x }}]; // Note: TomTom uses [lng, lat]
+        const orderLocation = [{{ order_location.y }}, {{ order_location.x }}];
+        
+        let map;
+        let driverMarker;
+        let orderMarker;
+        let routeLayer;
+        
+        // Initialize map
+        function initMap() {
+            // Create map centered between driver and order
+            const center = calculateCenter(driverLocation, orderLocation);
+            
+            map = tt.map({
+                key: tomtomKey,
+                container: 'map',
+                center: center,
+                zoom: 12,
+                style: 'tomtom://vector/1/basic-main',
+            });
+            
+            // Add controls
+            map.addControl(new tt.FullscreenControl());
+            map.addControl(new tt.NavigationControl());
+            
+            // Add markers
+            addMarkers();
+            
+            // Calculate and display route
+            getRoute();
+        }
+        
+        // Calculate center point between two locations
+        function calculateCenter(point1, point2) {
+            return [
+                (point1[0] + point2[0]) / 2,
+                (point1[1] + point2[1]) / 2
+            ];
+        }
+        
+        // Add markers to map
+        function addMarkers() {
+            // Driver marker (blue)
+            driverMarker = new tt.Marker({ color: '#667eea' })
+                .setLngLat(driverLocation)
+                .setPopup(new tt.Popup({ offset: 35 })
+                    .setHTML(`
+                        <div style="padding: 10px;">
+                            <h3 style="margin: 0 0 5px 0; color: #667eea;">🚗 Driver Location</h3>
+                            <p style="margin: 0;"><strong>Driver:</strong> {{ driver.user.username }}</p>
+                            <p style="margin: 5px 0;"><strong>Vehicle:</strong> {{ driver.vehicle_type }}</p>
+                            <p style="margin: 0;"><strong>Last online:</strong> {{ driver.last_online|date:"Y-m-d H:i" }}</p>
+                        </div>
+                    `))
+                .addTo(map);
+            
+            // Order destination marker (green)
+            orderMarker = new tt.Marker({ color: '#48bb78' })
+                .setLngLat(orderLocation)
+                .setPopup(new tt.Popup({ offset: 35 })
+                    .setHTML(`
+                        <div style="padding: 10px;">
+                            <h3 style="margin: 0 0 5px 0; color: #48bb78;">📦 Delivery Destination</h3>
+                            <p style="margin: 0;"><strong>Order #:</strong> {{ order.id }}</p>
+                            <p style="margin: 5px 0;"><strong>Customer:</strong> {{ user_name }}</p>
+                            <p style="margin: 0;"><strong>Address:</strong> {{ order_location.address }}</p>
+                        </div>
+                    `))
+                .addTo(map);
+            
+            // Fit map to show both markers
+            const bounds = new tt.LngLatBounds()
+                .extend(driverLocation)
+                .extend(orderLocation);
+            
+            map.fitBounds(bounds, { padding: 100, duration: 1000 });
+        }
+        
+        // Calculate and display route
+        function getRoute() {
+            document.getElementById('loading').style.display = 'block';
+            
+            // Remove existing route layer
+            if (routeLayer) {
+                map.removeLayer(routeLayer.id);
+                map.removeSource(routeLayer.id);
+            }
+            
+            // Calculate route
+            tt.services.calculateRoute({
+                key: tomtomKey,
+                traffic: false,
+                locations: `${driverLocation[0]},${driverLocation[1]}:${orderLocation[0]},${orderLocation[1]}`,
+                travelMode: 'car'
+            })
+            .then(function(response) {
+                document.getElementById('loading').style.display = 'none';
+                
+                const route = response.routes[0];
+                const routeCoordinates = route.legs[0].points.map(point => [point.lng, point.lat]);
+                
+                // Display route information
+                displayRouteInfo(route);
+                
+                // Add route to map
+                routeLayer = {
+                    id: 'route',
+                    type: 'line',
+                    source: {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            properties: {},
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: routeCoordinates
+                            }
+                        }
+                    },
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#667eea',
+                        'line-width': 4,
+                        'line-opacity': 0.7
+                    }
+                };
+                
+                map.addSource(routeLayer.id, routeLayer.source);
+                map.addLayer(routeLayer);
+                
+            })
+            .catch(err => {
+    console.error("Route error FULL:", err);
+
+    if (err && err.responseText) {
+        console.error("TomTom says:", err.responseText);
+        alert(err.responseText);
+    } else if (err && err.message) {
+        console.error("Message:", err.message);
+        alert(err.message);
+    } else {
+        alert("Unknown route error");
+    }
+});
+
+        }
+        
+        // Display route information
+        function displayRouteInfo(route) {
+            const summary = route.summary;
+            const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
+            const travelTimeMinutes = Math.round(summary.travelTimeInSeconds / 60);
+            
+            document.getElementById('route-details').innerHTML = `
+                <div class="info-card">
+                    <h3>Distance</h3>
+                    <p>${distanceKm} km</p>
+                </div>
+                <div class="info-card">
+                    <h3>Estimated Time</h3>
+                    <p>${travelTimeMinutes} minutes</p>
+                </div>
+                <div class="info-card">
+                    <h3>Traffic</h3>
+                    <p>${summary.trafficDelayInSeconds > 0 ? 'Delays expected' : 'Clear'}</p>
+                </div>
+                <div class="info-card">
+                    <h3>Departure</h3>
+                    <p>Current location</p>
+                </div>
+            `;
+        }
+        
+        // Open directions in Google Maps
+        function getDirections() {
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${driverLocation[1]},${driverLocation[0]}&destination=${orderLocation[1]},${orderLocation[0]}&travelmode=driving`;
+            window.open(url, '_blank');
+        }
+        
+        // Update driver location (can be called periodically)
+        function updateDriverLocation(lng, lat) {
+            driverLocation[0] = lng;
+            driverLocation[1] = lat;
+            
+            driverMarker.setLngLat(driverLocation);
+            getRoute(); // Recalculate route
+            
+            // Optional: Send update to server
+            fetch('/api/update-driver-location/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    x: lat,
+                    y: lng
+                })
+            });
+        }
+        
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', initMap);
+        
+        // Optional: Simulate driver movement (for demo)
+        // setInterval(() => {
+        //     if (map) {
+        //         const randomOffset = () => (Math.random() - 0.5) * 0.001;
+        //         updateDriverLocation(
+        //             driverLocation[0] + randomOffset(),
+        //             driverLocation[1] + randomOffset()
+        //         );
+        //     }
+        // }, 10000);
+    </script>
+</body>
+</html>

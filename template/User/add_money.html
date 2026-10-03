@@ -1,0 +1,686 @@
+{% extends "base1.html" %}
+
+{% block content %}
+<div class="add-money-container">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+            <div class="alert-icon">
+                <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+            </div>
+            <div class="alert-content">
+                <strong>{% if message.tags == 'error' %}Error{% else %}Success{% endif %}!</strong>
+                {{ message }}
+            </div>
+            <button class="alert-close" onclick="this.parentElement.style.display='none'">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Header Section -->
+    <div class="page-header">
+        <h1><i class="fas fa-plus-circle"></i> Add Money</h1>
+        <p>Fund your account securely</p>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+        <div class="balance-content">
+            <div class="balance-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="balance-info">
+                <span class="balance-label">Current Balance</span>
+                <span class="balance-amount">${{ wallet.Amount|floatformat:2 }}</span>
+            </div>
+        </div>
+        <div class="balance-wave"></div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Add Money Form -->
+        <div class="form-section">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2><i class="fas fa-money-bill-wave"></i> Add Money Form</h2>
+                    <p>Enter your payment details below</p>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data" class="add-money-form">
+                    {% csrf_token %}
+                    
+                    <!-- Payment Type -->
+                    <div class="form-group">
+                        <label for="id_type" class="form-label">
+                            <i class="fas fa-credit-card"></i> Payment Type
+                        </label>
+                        <div class="input-with-icon">
+                            {{ form.type }}
+                            <i class="form-icon fas fa-chevron-down"></i>
+                        </div>
+                        {% if form.type.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.type.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Amount -->
+                    <div class="form-group">
+                        <label for="id_Amount" class="form-label">
+                            <i class="fas fa-dollar-sign"></i> Amount
+                        </label>
+                        <div class="input-with-icon">
+                            {{ form.Amount }}
+                            <i class="form-icon fas fa-money-bill"></i>
+                        </div>
+                        {% if form.Amount.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.Amount.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Transaction Code -->
+                    <div class="form-group">
+                        <label for="id_code" class="form-label">
+                            <i class="fas fa-receipt"></i> Transaction Code (Optional)
+                        </label>
+                        <div class="input-with-icon">
+                            {{ form.code }}
+                            <i class="form-icon fas fa-hashtag"></i>
+                        </div>
+                        {% if form.code.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.code.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Proof Image -->
+                    <div class="form-group">
+                        <label for="id_image" class="form-label">
+                            <i class="fas fa-image"></i> Proof Image (Optional)
+                        </label>
+                        <div class="file-upload">
+                            {{ form.image }}
+                            <div class="file-upload-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose file or drag & drop</span>
+                            </div>
+                        </div>
+                        {% if form.image.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-circle"></i>
+                            {% for error in form.image.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <small class="help-text">
+                            Upload screenshot or photo of your payment proof (JPG, PNG, PDF)
+                        </small>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                            Submit Add Money Request
+                        </button>
+                        <a href="{% url 'app:account_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Box -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>Important Information</h3>
+                </div>
+                <div class="info-content">
+                    <div class="info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>Processing Time</strong>
+                            <span>1-2 business days</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <div>
+                            <strong>Secure & Protected</strong>
+                            <span>Bank-level security</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>Verification Required</strong>
+                            <span>Manual review process</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-camera"></i>
+                        <div>
+                            <strong>Clear Images</strong>
+                            <span>Upload readable proofs</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-headset"></i>
+                        <div>
+                            <strong>Support Available</strong>
+                            <span>24/7 customer service</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Tips -->
+            <div class="tips-card">
+                <h4><i class="fas fa-lightbulb"></i> Quick Tips</h4>
+                <ul>
+                    <li>Double-check amount before submitting</li>
+                    <li>Keep transaction details handy</li>
+                    <li>Ensure image proofs are clear and readable</li>
+                    <li>Save your transaction code for reference</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Main Container */
+    .add-money-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+    }
+
+    /* Messages */
+    .messages-container {
+        margin-bottom: 30px;
+    }
+
+    .alert {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid;
+    }
+
+    .alert-success {
+        background: rgba(25, 135, 84, 0.15);
+        border-color: #198754;
+        color: #0f5132;
+    }
+
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.15);
+        border-color: #dc3545;
+        color: #721c24;
+    }
+
+    .alert-icon {
+        margin-right: 15px;
+        font-size: 1.2rem;
+    }
+
+    .alert-content {
+        flex: 1;
+    }
+
+    .alert-close {
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+    }
+
+    .alert-close:hover {
+        opacity: 1;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        color: #198754;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    .page-header p {
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+
+    /* Balance Card */
+    .balance-card {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .balance-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .balance-icon {
+        font-size: 3rem;
+        opacity: 0.9;
+    }
+
+    .balance-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .balance-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .balance-amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .balance-wave {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50% 50% 0 0;
+    }
+
+    /* Content Grid */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+    }
+
+    /* Form Section */
+    .form-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.1);
+        border: 1px solid rgba(25, 135, 84, 0.1);
+    }
+
+    .form-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .form-header h2 {
+        color: #198754;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+    .form-header p {
+        color: #6c757d;
+    }
+
+    /* Form Styles */
+    .add-money-form {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #198754;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon select,
+    .input-with-icon input {
+        width: 100%;
+        padding: 15px 45px 15px 15px;
+        border: 2px solid rgba(25, 135, 84, 0.2);
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .input-with-icon select:focus,
+    .input-with-icon input:focus {
+        outline: none;
+        border-color: #198754;
+        box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.1);
+    }
+
+    .form-icon {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #198754;
+        pointer-events: none;
+    }
+
+    /* File Upload */
+    .file-upload {
+        position: relative;
+        border: 2px dashed rgba(25, 135, 84, 0.3);
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .file-upload:hover {
+        border-color: #198754;
+        background: rgba(25, 135, 84, 0.05);
+    }
+
+    .file-upload input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .file-upload-label {
+        color: #6c757d;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .file-upload-label i {
+        font-size: 2rem;
+        color: #198754;
+    }
+
+    /* Help Text */
+    .help-text {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    /* Error Message */
+    .error-message {
+        color: #dc3545;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 15px 25px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        flex: 1;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(25, 135, 84, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+    }
+
+    /* Info Section */
+    .info-card, .tips-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.1);
+        margin-bottom: 25px;
+        border: 1px solid rgba(25, 135, 84, 0.1);
+    }
+
+    .info-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 25px;
+        color: #198754;
+    }
+
+    .info-header i {
+        color: #198754;
+        font-size: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        border-bottom: 1px solid rgba(25, 135, 84, 0.1);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item i {
+        color: #198754;
+        font-size: 1.2rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .info-item div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-item strong {
+        color: #198754;
+        font-size: 0.9rem;
+    }
+
+    .info-item span {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    /* Tips Card */
+    .tips-card h4 {
+        color: #198754;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tips-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .tips-card li {
+        padding: 8px 0;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tips-card li:before {
+        content: "•";
+        color: #198754;
+        font-weight: bold;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .add-money-container {
+            padding: 15px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .form-card {
+            padding: 25px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .balance-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 15px;
+        }
+
+        .balance-amount {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .form-card {
+            padding: 20px;
+        }
+
+        .input-with-icon select,
+        .input-with-icon input {
+            padding: 12px 40px 12px 12px;
+        }
+    }
+</style>
+
+<script>
+    // File upload preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        const fileUploadLabel = document.querySelector('.file-upload-label span');
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    fileUploadLabel.textContent = this.files[0].name;
+                }
+            });
+        }
+
+        // Add focus styles dynamically
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    });
+</script>
+{% endblock %}

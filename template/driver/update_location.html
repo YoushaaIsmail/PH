@@ -1,0 +1,294 @@
+<!-- templates/driver/update_location.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>更新位置 - {{ driver.user.username }}</title>
+    <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #map { height: 60vh; width: 100%; margin: 20px 0; border: 2px solid #ddd; }
+        .control-panel { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        .btn { 
+            padding: 10px 20px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        .coordinates { 
+            display: inline-block; 
+            background: #e9ecef; 
+            padding: 5px 10px; 
+            border-radius: 4px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>司机位置更新系统</h1>
+    <p>司机: <strong>{{ driver.user.get_full_name|default:driver.user.username }}</strong></p>
+    
+    <div class="control-panel">
+        <h3>位置控制</h3>
+        <button id="get-location-btn" class="btn">获取当前位置</button>
+        <button id="start-auto-btn" class="btn">开始自动更新</button>
+        <button id="stop-auto-btn" class="btn" disabled>停止自动更新</button>
+        
+        <div style="margin-top: 15px;">
+            <label>自动更新间隔（秒）: </label>
+            <select id="interval-select">
+                <option value="10">10秒</option>
+                <option value="30" selected>30秒</option>
+                <option value="60">1分钟</option>
+                <option value="300">5分钟</option>
+            </select>
+        </div>
+        
+        <div id="status-display" class="status"></div>
+    </div>
+    
+    <div>
+        <h3>当前位置信息</h3>
+        <p>经度: <span id="current-lng" class="coordinates">未获取</span></p>
+        <p>纬度: <span id="current-lat" class="coordinates">未获取</span></p>
+        <p>最后更新: <span id="last-update">从未更新</span></p>
+    </div>
+    
+    <h3>地图显示</h3>
+    <div id="map"></div>
+    
+    <script src='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'></script>
+    <script>
+        const tomtomKey = '{{ tomtom_api_key }}';
+        let map = null;
+        let driverMarker = null;
+        let autoUpdateInterval = null;
+        let currentLocation = null;
+        
+        // 初始化地图
+        function initMap(centerLng = 55.2708, centerLat = 25.2048) {
+            map = tt.map({
+                key: tomtomKey,
+                container: 'map',
+                center: [centerLng, centerLat],
+                zoom: 12
+            });
+            
+            // 添加地图点击事件（手动设置位置）
+            map.on('click', function(event) {
+                const coords = event.lngLat;
+                updateLocationDisplay(coords.lng, coords.lat);
+                sendLocationToServer(coords.lng, coords.lat);
+            });
+            
+            // 添加控件
+            map.addControl(new tt.NavigationControl());
+        }
+        
+        // 获取浏览器地理位置
+        function getCurrentLocation() {
+            if (!navigator.geolocation) {
+                showStatus('您的浏览器不支持地理位置功能', 'error');
+                return;
+            }
+            
+            document.getElementById('get-location-btn').disabled = true;
+            showStatus('正在获取位置...', 'info');
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lng = position.coords.longitude;
+                    const lat = position.coords.latitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    updateLocationDisplay(lng, lat);
+                    sendLocationToServer(lng, lat);
+                    updateMapMarker(lng, lat);
+                    
+                    showStatus(`位置获取成功！精度: ${accuracy.toFixed(1)}米`, 'success');
+                    document.getElementById('get-location-btn').disabled = false;
+                },
+                function(error) {
+                    let errorMessage = '无法获取位置: ';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage += '用户拒绝了位置请求';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage += '位置信息不可用';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage += '获取位置超时';
+                            break;
+                        default:
+                            errorMessage += '未知错误';
+                    }
+                    showStatus(errorMessage, 'error');
+                    document.getElementById('get-location-btn').disabled = false;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+        
+        // 发送位置到服务器
+        function sendLocationToServer(longitude, latitude) {
+            const csrfToken = getCookie('csrftoken');
+            
+            fetch('/api/driver/location/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify({
+                    longitude: longitude,
+                    latitude: latitude
+                }),
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('last-update').textContent = 
+                        new Date().toLocaleTimeString();
+                    currentLocation = { lng: longitude, lat: latitude };
+                } else {
+                    showStatus('服务器更新失败: ' + (data.error || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('网络错误: ' + error.message, 'error');
+            });
+        }
+        
+        // 更新地图标记
+        function updateMapMarker(lng, lat) {
+            if (!map) return;
+            
+            if (driverMarker) {
+                driverMarker.setLngLat([lng, lat]);
+            } else {
+                driverMarker = new tt.Marker({
+                    color: '#FF0000',
+                    draggable: true
+                })
+                .setLngLat([lng, lat])
+                .addTo(map);
+                
+                // 标记拖动时更新位置
+                driverMarker.on('dragend', function() {
+                    const position = driverMarker.getLngLat();
+                    updateLocationDisplay(position.lng, position.lat);
+                    sendLocationToServer(position.lng, position.lat);
+                });
+            }
+            
+            // 居中地图
+            map.setCenter([lng, lat]);
+            map.setZoom(15);
+        }
+        
+        // 更新位置显示
+        function updateLocationDisplay(lng, lat) {
+            document.getElementById('current-lng').textContent = lng.toFixed(6);
+            document.getElementById('current-lat').textContent = lat.toFixed(6);
+        }
+        
+        // 显示状态信息
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status-display');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status';
+            
+            if (type === 'success') {
+                statusDiv.classList.add('status-success');
+            } else if (type === 'error') {
+                statusDiv.classList.add('status-error');
+            }
+            
+            // 3秒后清除成功/信息消息
+            if (type !== 'error') {
+                setTimeout(() => {
+                    if (statusDiv.textContent === message) {
+                        statusDiv.textContent = '';
+                        statusDiv.className = 'status';
+                    }
+                }, 3000);
+            }
+        }
+        
+        // 自动位置更新功能
+        function startAutoUpdate() {
+            const interval = parseInt(document.getElementById('interval-select').value) * 1000;
+            
+            // 先立即获取一次位置
+            getCurrentLocation();
+            
+            // 设置定时器
+            autoUpdateInterval = setInterval(getCurrentLocation, interval);
+            
+            document.getElementById('start-auto-btn').disabled = true;
+            document.getElementById('stop-auto-btn').disabled = false;
+            
+            showStatus(`已开始自动更新，间隔: ${interval/1000}秒`, 'success');
+        }
+        
+        function stopAutoUpdate() {
+            if (autoUpdateInterval) {
+                clearInterval(autoUpdateInterval);
+                autoUpdateInterval = null;
+                
+                document.getElementById('start-auto-btn').disabled = false;
+                document.getElementById('stop-auto-btn').disabled = true;
+                
+                showStatus('已停止自动更新', 'info');
+            }
+        }
+        
+        // 获取CSRF Token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            
+            // 绑定按钮事件
+            document.getElementById('get-location-btn').addEventListener('click', getCurrentLocation);
+            document.getElementById('start-auto-btn').addEventListener('click', startAutoUpdate);
+            document.getElementById('stop-auto-btn').addEventListener('click', stopAutoUpdate);
+            
+            // 页面关闭时停止自动更新
+            window.addEventListener('beforeunload', stopAutoUpdate);
+        });
+    </script>
+</body>
+</html>

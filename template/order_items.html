@@ -1,0 +1,399 @@
+{% extends 'base1.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .order-items-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .order-header-card {
+        background: linear-gradient(135deg, #198754, #28a745);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.2);
+    }
+
+    .items-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .item-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto auto;
+        gap: 1rem;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.3s ease;
+    }
+
+    .item-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .item-row:last-child {
+        border-bottom: none;
+    }
+
+    .item-image {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border: 1px solid #e9ecef;
+    }
+
+    .item-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-name {
+        font-weight: 600;
+        color: #212529;
+        margin-bottom: 0.25rem;
+    }
+
+    .item-details {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .item-price {
+        font-weight: 600;
+        color: #198754;
+        text-align: center;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quantity-btn {
+        width: 35px;
+        height: 35px;
+        border: 1px solid #198754;
+        background: white;
+        color: #198754;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .quantity-btn:hover {
+        background: #198754;
+        color: white;
+    }
+
+    .quantity-btn:disabled {
+        border-color: #6c757d;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .quantity-btn:disabled:hover {
+        background: white;
+        color: #6c757d;
+    }
+
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        padding: 0.25rem;
+        border: 1px solid #e9ecef;
+        border-radius: 5px;
+        font-weight: 600;
+    }
+
+    .item-total {
+        font-weight: 700;
+        color: #198754;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .item-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-delete {
+        background: #dc3545;
+        color: white;
+        border: none;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete:hover {
+        background: #bb2d3b;
+        transform: scale(1.1);
+    }
+
+    .order-summary {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .summary-row:last-child {
+        border-bottom: none;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #198754;
+    }
+
+    .summary-label {
+        flex: 1;
+        color: #6c757d;
+    }
+
+    .summary-value {
+        font-weight: 600;
+    }
+
+    .empty-items {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #6c757d;
+    }
+
+    .empty-items i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+        .item-row {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .item-info {
+            align-items: center;
+        }
+        
+        .quantity-controls {
+            justify-content: center;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="order-items-container">
+    <!-- Order Header -->
+    <div class="order-header-card">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="fas fa-edit me-3"></i>Edit Order Items
+                </h1>
+                <p class="lead mb-0">Order #{{ order.id|truncatechars:12 }} • {{ order.get_status_display }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="bg-white bg-opacity-20 p-3 rounded-pill d-inline-block">
+                    <small class="text-white">
+                        <i class="fas fa-cube me-1"></i>{{ order.item_count }} items
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-triangle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Items List -->
+        <div class="col-lg-8">
+            <div class="items-card">
+                <h3 class="mb-4">
+                    <i class="fas fa-list-ul me-2"></i>Order Items
+                </h3>
+
+                {% if order_items %}
+                {% for item in order_items %}
+                <div class="item-row">
+                    {% if item.medicine.image %}
+                    <img src="{{ item.medicine.image.url }}" alt="{{ item.medicine.name }}" class="item-image">
+                    {% else %}
+                    <div class="item-image d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-pills text-muted"></i>
+                    </div>
+                    {% endif %}
+
+                    <div class="item-info">
+                        <div class="item-name">{{ item.medicine.name }}</div>
+                        <div class="item-details">
+                            {{ item.medicine.brand }} • {{ item.medicine.strength }}
+                        </div>
+                    </div>
+
+                    <div class="item-price">${{ item.medicine.price }}</div>
+
+                    <div class="quantity-controls">
+                        {% if order.can_edit %}
+                        <form method="post" action="{% url 'app:update_order_item' item.id %}" class="d-flex align-items-center gap-2">
+                            {% csrf_token %}
+                            <button type="button" class="quantity-btn decrease" onclick="this.form.quantity.value=parseInt(this.form.quantity.value)-1; this.form.submit()" {% if item.quantity <= 1 %}disabled{% endif %}>
+                                -
+                            </button>
+                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.medicine.total_quantity }}" class="quantity-input" onchange="this.form.submit()">
+                            <button type="button" class="quantity-btn increase" onclick="this.form.quantity.value=parseInt(this.form.quantity.value)+1; this.form.submit()" {% if item.quantity >= item.medicine.total_quantity %}disabled{% endif %}>
+                                +
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="quantity-input" style="background: #e9ecef;">{{ item.quantity }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="item-total">${{ item.line_total }}</div>
+
+                    {% if order.can_edit %}
+                    <div class="item-actions">
+                        <form method="post" action="{% url 'app:delete_order_item' item.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to remove this item?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-items">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h4 class="mt-3">No Items in Order</h4>
+                    <p class="text-muted">This order doesn't contain any items.</p>
+                    <a href="{% url 'app:medicine_list' %}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>Add Items
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="order-summary">
+                <h4 class="mb-4">
+                    <i class="fas fa-receipt me-2"></i>Order Summary
+                </h4>
+
+                <div class="summary-row">
+                    <span class="summary-label">Items ({{ order.item_count }})</span>
+                    <span class="summary-value">${{ order.total_amount }}</span>
+                </div>
+
+                {% if order.price_delivery %}
+                <div class="summary-row">
+                    <span class="summary-label">Delivery Fee</span>
+                    <span class="summary-value">$5.00</span>
+                </div>
+                {% endif %}
+
+                <div class="summary-row">
+                    <span class="summary-label">Total Amount</span>
+                    <span class="summary-value">${{ order.total_amount }}</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'app:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Orders
+                    </a>
+                    
+                    {% if order.can_edit and order_items %}
+                    <a href="{% url 'app:medicine_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-2"></i>Add More Items
+                    </a>
+                    {% endif %}
+
+                    {% if order.can_pay and order_items %}
+                    <a href="{% url 'app:order_payment' order.id %}" class="btn btn-success">
+                        <i class="fas fa-credit-card me-2"></i>Proceed to Pay
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real-time quantity updates with AJAX (optional enhancement)
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInputs = document.querySelectorAll('.quantity-input');
+    
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const form = this.closest('form');
+            if (form) {
+                // You can add AJAX here for real-time updates
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

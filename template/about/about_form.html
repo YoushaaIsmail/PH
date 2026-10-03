@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+  .custom-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .form-group label {
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #198754;
+  }
+
+  .form-group .field-wrapper {
+    position: relative;
+  }
+
+  .form-group i {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    color: #198754;
+    pointer-events: none;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+    border: 1px solid #198754;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: #f0f8ff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #146c43;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    background-color: #ffffff;
+  }
+
+  .form-group .error {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.3rem;
+  }
+
+  .form-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 2rem;
+  }
+
+  .form-actions .btn-success {
+    background-color: #198754;
+    border: none;
+  }
+
+  .form-actions .btn-success:hover {
+    background-color: #146c43;
+  }
+
+  .form-actions .btn-secondary {
+    background-color: #6c757d;
+  }
+</style>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0">{{ title }}</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" class="custom-form">
+      {% csrf_token %}
+      {% for field in form.visible_fields %}
+        <div class="form-group">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          <div class="field-wrapper">
+            {{ field }}
+            {% if "facebook" in field.name %}
+              <i class="fa fa-facebook"></i>
+            {% elif "instgram" in field.name %}
+              <i class="fa fa-instagram"></i>
+            {% elif "phone" in field.name %}
+              <i class="fa fa-phone"></i>
+            {% elif "MTN" in field.name %}
+              <i class="fa fa-credit-card"></i>
+            {% elif "Syria" in field.name %}
+              <i class="fa fa-money"></i>
+            {% elif "price" in field.name %}
+              <i class="fa fa-dollar-sign"></i>
+            {% else %}
+              <i class="fa fa-edit"></i>
+            {% endif %}
+          </div>
+          {% for error in field.errors %}
+            <div class="error">{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-success">
+          <i class="fa fa-save me-1"></i> Save
+        </button>
+        <a href="{% url 'app:about_edit' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

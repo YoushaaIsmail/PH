@@ -1,0 +1,113 @@
+<!-- templates/tracking/track_order.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Track Order #{{ order_id }}</title>
+    <link rel='stylesheet' type='text/css' href='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps.css'>
+    <style>
+        #map { height: 70vh; width: 100%; }
+        #info-panel { padding: 20px; background: #f8f9fa; }
+        .status-badge { padding: 5px 10px; border-radius: 20px; }
+        .status-processing { background: #ffc107; }
+        .status-delivering { background: #17a2b8; }
+        .status-completed { background: #28a745; }
+    </style>
+</head>
+<body>
+    <div id="info-panel">
+        <h2>Tracking Order: {{ order_id|slice:":8" }}...</h2>
+        <p><strong>Status:</strong> <span id="order-status" class="status-badge">{{ order.status }}</span></p>
+        <p><strong>Driver:</strong> <span id="driver-name">{% if order.his_driver %}{{ order.his_driver.user.get_full_name }}{% else %}Not assigned yet{% endif %}</span></p>
+        <p><strong>Vehicle:</strong> <span id="driver-vehicle">{% if order.his_driver %}{{ order.his_driver.vehicle_type }}{% endif %}</span></p>
+        <p><strong>Last Updated:</strong> <span id="last-update">Just now</span></p>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script src='https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.25.0/maps/maps-web.min.js'></script>
+    <script>
+        const tomtomKey = '{{ tomtom_api_key }}';
+        const orderId = '{{ order_id }}';
+        
+        // Initialize map
+        const map = tt.map({
+            key: tomtomKey,
+            container: 'map',
+            center: [55.2708, 25.2048],  // Default center (Dubai)
+            zoom: 12
+        });
+        
+        let driverMarker = null;
+        let updateInterval = null;
+        
+        // Function to fetch and update driver location
+        function updateDriverLocation() {
+            fetch(`/api/order/${orderId}/track/`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Tracking data:', data);
+                    
+                    // Update order info
+                    document.getElementById('order-status').textContent = data.status;
+                    document.getElementById('order-status').className = `status-badge status-${data.status}`;
+                    
+                    if (data.driver_info) {
+                        document.getElementById('driver-name').textContent = data.driver_info.name;
+                        document.getElementById('driver-vehicle').textContent = data.driver_info.vehicle || 'N/A';
+                    }
+                    
+                    // Update map if driver location is available
+                    if (data.driver_location) {
+                        const lng = data.driver_location.longitude;
+                        const lat = data.driver_location.latitude;
+                        
+                        // Center map on driver
+                        map.setCenter([lng, lat]);
+                        map.setZoom(15);
+                        
+                        // Update or create marker
+                        if (driverMarker) {
+                            driverMarker.setLngLat([lng, lat]);
+                        } else {
+                            driverMarker = new tt.Marker({
+                                color: '#FF0000'
+                            })
+                            .setLngLat([lng, lat])
+                            .addTo(map);
+                            
+                            // Add popup with driver info
+                            const popup = new tt.Popup({ offset: 30 })
+                                .setHTML(`<strong>Your Driver</strong><br>${data.driver_info.name}<br>${data.driver_info.vehicle}`);
+                            driverMarker.setPopup(popup);
+                        }
+                        
+                        // Update timestamp
+                        const updateTime = new Date(data.driver_location.updated).toLocaleTimeString();
+                        document.getElementById('last-update').textContent = updateTime;
+                    }
+                    
+                    // If no driver assigned, show message
+                    if (!data.driver_assigned) {
+                        if (driverMarker) {
+                            driverMarker.remove();
+                            driverMarker = null;
+                        }
+                        document.getElementById('last-update').textContent = 'Waiting for driver assignment';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching location:', error);
+                });
+        }
+        
+        // Start updating every 10 seconds
+        updateDriverLocation();  // Initial call
+        updateInterval = setInterval(updateDriverLocation, 10000);
+        
+        // Clean up interval when page closes
+        window.addEventListener('beforeunload', () => {
+            if (updateInterval) clearInterval(updateInterval);
+        });
+    </script>
+</body>
+</html>

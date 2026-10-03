@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}Dashboard{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: #f8f9fa;
+      margin: 0;
+      font-family: 'Oswald', 'Arial', 'Tahoma', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    /* عند التبديل للغة العربية */
+    body[dir="rtl"] {
+      font-family: 'Tahoma', 'Arial', sans-serif;
+    }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* القائمة الجانبية */
+    #partsSidebar {
+      width: 250px;
+      background: linear-gradient(#20925d,#034325);
+      color: white;
+      padding: 1rem;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      overflow-y: auto;
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+
+    /* تعديل القائمة عند العربية */
+    body[dir="rtl"] #partsSidebar {
+      left: auto;
+      right: 0;
+    }
+
+    #partsSidebar img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 0.5rem;
+      border: 3px solid #fff;
+    }
+
+    #partsSidebar.collapsed {
+      width: 70px;
+      padding: 1rem 0.5rem;
+      text-align: center;
+    }
+
+    #partsSidebar.collapsed .username,
+    #partsSidebar.collapsed h5,
+    #partsSidebar.collapsed a span {
+      display: none;
+    }
+
+    #partsSidebar.collapsed a i {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .content-wrapper {
+      margin-left: 250px;
+      width: calc(100% - 250px);
+      transition: all 0.3s;
+    }
+
+    /* تعديل المحتوى عند العربية */
+    body[dir="rtl"] .content-wrapper {
+      margin-left: 0;
+      margin-right: 250px;
+    }
+
+    .content-wrapper.expanded {
+      margin-left: 70px;
+      width: calc(100% - 70px);
+    }
+
+    body[dir="rtl"] .content-wrapper.expanded {
+      margin-left: 0;
+      margin-right: 70px;
+    }
+
+    #partsSidebar .username {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    #partsSidebar h5 {
+      border-bottom: 2px solid #b8f5cf;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    /* تعديل النصوص عند العربية */
+    body[dir="rtl"] #partsSidebar h5 {
+      text-align: right;
+    }
+
+    #partsSidebar a.part-link {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      margin-bottom: 0.4rem;
+      border-radius: 6px;
+      color: white;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+
+    /* تعديل اتجاه النص عند العربية */
+    body[dir="rtl"] #partsSidebar a.part-link {
+      flex-direction: row-reverse;
+    }
+
+    body[dir="rtl"] #partsSidebar a.part-link i {
+      margin-left: 0.5rem;
+      margin-right: 0;
+    }
+
+    #partsSidebar a.part-link:hover {
+      background-color: #b8f5cf;
+      color: #064d2a;
+    }
+
+    .navbar-custom {
+      background: linear-gradient(90deg,#20925d,#034325);
+      color: white;
+      padding: 1rem 2rem;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(25, 135, 84, 0.5);
+    }
+
+    .navbar-custom .navbar-brand {
+      color: white;
+    }
+
+    .main-content {
+      padding: 2rem;
+    }
+
+    footer {
+      background: #fff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.875rem;
+      border-top: 1px solid #dee2e6;
+    }
+
+    /* أزرار اللغة */
+    .lang-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .lang-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    /* تأثيرات الأيقونة */
+    .icon-leaf {
+      font-size: 1.5rem;
+      color: white;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    .icon-leaf:hover {
+      transform: scale(1.2);
+      color: #155724;
+    }
+
+    .username {
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      #partsSidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+      }
+
+      .content-wrapper {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+      }
+
+      body[dir="rtl"] .content-wrapper {
+        margin-right: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- الشريط الجانبي -->
+  <aside id="partsSidebar">
+    <div class="text-center">
+      <div class="username">
+        <i class="fas fa-leaf me-1 icon-leaf"></i>
+        {{ request.user.username }}
+      </div>
+    </div>
+
+      </aside>
+
+  <!-- المحتوى -->
+  <div class="content-wrapper">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container-fluid justify-content-between">
+        <div class="d-flex align-items-center">
+          <button id="toggleSidebar" class="btn btn-sm btn-light me-3">
+            <i class="fas fa-bars"></i>
+          </button>
+          <a class="navbar-brand mb-0" href="#" id="navbar-title">Dashboard</a>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <!-- زر التبديل بين اللغات -->
+          <button id="languageToggle" class="btn lang-btn">
+            <i class="fas fa-language me-1"></i>
+            <span id="languageText">العربية</span>
+          </button>
+          <a href="#" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-key me-1"></i>
+          </a>
+          <a href="{% url 'app:change_password' %}" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-cog me-1"></i>
+          </a>
+          <a href="{% url 'app:logout' %}" class="btn btn-outline-light btn-sm">
+            <i class="fas fa-sign-out-alt me-1"></i>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <small id="footer-text">© 2025 Auto Parts Management System</small>
+    </footer>
+  </div>
+
+  <script>
+    const toggleButton = document.getElementById("toggleSidebar");
+    const sidebar = document.getElementById("partsSidebar");
+    const content = document.querySelector(".content-wrapper");
+    const languageToggle = document.getElementById("languageToggle");
+    const languageText = document.getElementById("languageText");
+
+    // حالة اللغة الحالية
+    let isArabic = document.body.dir === "rtl";
+
+    // كلمات القاموس للترجمة
+    const translations = {
+      en: {
+        title: "Dashboard",
+        dashboard: "Dashboard",
+        categories: "Categories",
+        ingredients: "Ingredients",
+        medicines: "Medicines",
+        batchmed: "Batchmed",
+        prescriptions: "Prescriptions",
+        addresses: "Addresses",
+        orders: "Orders",
+        operation: "Operation",
+        driver: "Driver",
+        about: "About",
+        footer: "© 2025 Auto Parts Management System",
+        language: "العربية"
+      },
+      ar: {
+        title: "لوحة التحكم",
+        dashboard: "لوحة التحكم",
+        categories: "الفئات",
+        ingredients: "المكونات",
+        medicines: "الأدوية",
+        batchmed: "دُفعات الأدوية",
+        prescriptions: "الوصفات",
+        addresses: "العناوين",
+        orders: "الطلبات",
+        operation: "العمليات",
+        driver: "السائقين",
+        about: "حول",
+        footer: "© 2025 نظام إدارة قطع السيارات",
+        language: "English"
+      }
+    };
+
+    // تبديل اللغة
+    languageToggle.addEventListener("click", () => {
+      isArabic = !isArabic;
+      
+      // تغيير اتجاه الصفحة
+      document.body.dir = isArabic ? "rtl" : "ltr";
+      
+      // تحديث النصوص
+      updateTexts();
+      
+      // حفظ التفضيل في localStorage
+      localStorage.setItem('language', isArabic ? 'ar' : 'en');
+    });
+
+    // تحديث النصوص بناءً على اللغة
+    function updateTexts() {
+      const lang = isArabic ? 'ar' : 'en';
+      const texts = translations[lang];
+      
+      // تحديث عنوان الشريط الجانبي
+      document.getElementById('sidebar-title').textContent = texts.dashboard;
+      document.getElementById('navbar-title').textContent = texts.dashboard;
+      
+      // تحديث روابط الشريط الجانبي
+      document.getElementById('dashboard-link').querySelector('span').textContent = texts.dashboard;
+      document.getElementById('categories-link').querySelector('span').textContent = texts.categories;
+      document.getElementById('ingredients-link').querySelector('span').textContent = texts.ingredients;
+      document.getElementById('medicines-link').querySelector('span').textContent = texts.medicines;
+      document.getElementById('batchmed-link').querySelector('span').textContent = texts.batchmed;
+      document.getElementById('prescriptions-link').querySelector('span').textContent = texts.prescriptions;
+      document.getElementById('addresses-link').querySelector('span').textContent = texts.addresses;
+      document.getElementById('orders-link').querySelector('span').textContent = texts.orders;
+      document.getElementById('operation-link').querySelector('span').textContent = texts.operation;
+      document.getElementById('driver-link').querySelector('span').textContent = texts.driver;
+      document.getElementById('about-link').querySelector('span').textContent = texts.about;
+      
+      // تحديث الفوتر
+      document.getElementById('footer-text').textContent = texts.footer;
+      
+      // تحديث نص زر اللغة
+      languageText.textContent = isArabic ? translations.en.language : translations.ar.language;
+    }
+
+    // تحميل التفضيل المحفوظ
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedLang = localStorage.getItem('language');
+      if (savedLang) {
+        isArabic = savedLang === 'ar';
+        document.body.dir = isArabic ? 'rtl' : 'ltr';
+        updateTexts();
+      }
+    });
+
+    // تبديل الشريط الجانبي
+    toggleButton.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+      content.classList.toggle("expanded");
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

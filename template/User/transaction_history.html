@@ -1,0 +1,723 @@
+{% extends "base1.html" %}
+
+{% block content %}
+<div class="transaction-history-container">
+    <!-- Header Section -->
+    <div class="page-header">
+        <h1><i class="fas fa-history"></i> Transaction History</h1>
+        <p>Track all your financial activities</p>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+        <div class="balance-content">
+            <div class="balance-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="balance-info">
+                <span class="balance-label">Current Balance</span>
+                <span class="balance-amount">${{ wallet.Amount|floatformat:2 }}</span>
+            </div>
+        </div>
+        <div class="balance-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Transactions</span>
+                <span class="stat-value">{{ operations|length }}</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Active Period</span>
+                <span class="stat-value">{{ operations.0.Date1|date:"M Y" }} - Present</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="{% url 'app:account_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <div class="filter-actions">
+            <button class="btn btn-outline" onclick="filterTransactions('all')">
+                <i class="fas fa-list"></i> All
+            </button>
+            <button class="btn btn-outline" onclick="filterTransactions('deposit')">
+                <i class="fas fa-plus-circle"></i> Deposits
+            </button>
+            <button class="btn btn-outline" onclick="filterTransactions('withdraw')">
+                <i class="fas fa-minus-circle"></i> Withdrawals
+            </button>
+        </div>
+    </div>
+
+    <!-- Transactions Section -->
+    <div class="transactions-section">
+        <div class="section-header">
+            <h2><i class="fas fa-receipt"></i> All Transactions</h2>
+            <div class="summary-cards">
+                <div class="summary-card income">
+                    <i class="fas fa-arrow-down"></i>
+                    <div>
+                        <span class="summary-label">Total Income</span>
+                        <span class="summary-amount">${{ total_income|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="summary-card expense">
+                    <i class="fas fa-arrow-up"></i>
+                    <div>
+                        <span class="summary-label">Total Withdrawn</span>
+                        <span class="summary-amount">${{ total_expense|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if operations %}
+        <!-- Desktop Table -->
+        <div class="transaction-table-container">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Transaction Type</th>
+                        <th>Payment Method</th>
+                        <th>Amount</th>
+                        <th>Reference Code</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for operation in operations %}
+                    <tr class="transaction-row" data-type="{{ operation.type|lower }}">
+                        <td class="transaction-date">
+                            <div class="date-icon">
+                                <i class="far fa-calendar"></i>
+                            </div>
+                            <div class="date-info">
+                                <span class="date-main">{{ operation.Date1|date:"M d, Y" }}</span>
+                                <span class="date-time">{{ operation.Date1|date:"H:i A" }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="type-badge type-{{ operation.type|lower }}">
+                                <i class="fas fa-{% if operation.type == 'deposit' %}plus{% else %}minus{% endif %}-circle"></i>
+                                {{ operation.get_type_display }}
+                            </span>
+                        </td>
+                        <td class="method-cell">
+                            <span class="method-badge method-{{ operation.Method|lower }}">
+                                <i class="fas fa-{% if operation.Method == 'Bank' %}university{% else %}credit-card{% endif %}"></i>
+                                {{ operation.Method }}
+                            </span>
+                        </td>
+                        <td class="amount-cell">
+                            <span class="amount {% if operation.type == 'withdraw' %}negative{% else %}positive{% endif %}">
+                                {% if operation.type == 'withdraw' %}-{% else %}+{% endif %}${{ operation.Amount|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td class="code-cell">
+                            <span class="transaction-code">
+                                <i class="fas fa-hashtag"></i>
+                                {{ operation.code|default:"No Code" }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ operation.state|lower }}">
+                                <i class="fas fa-{% if operation.state == 'completed' %}check-circle{% elif operation.state == 'pending' %}clock{% else %}exclamation-triangle{% endif %}"></i>
+                                {{ operation.state|title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="transaction-cards">
+            {% for operation in operations %}
+            <div class="transaction-card" data-type="{{ operation.type|lower }}">
+                <div class="card-header">
+                    <div class="card-type">
+                        <span class="type-badge type-{{ operation.type|lower }}">
+                            <i class="fas fa-{% if operation.type == 'deposit' %}plus{% else %}minus{% endif %}-circle"></i>
+                            {{ operation.get_type_display }}
+                        </span>
+                    </div>
+                    <div class="card-amount {% if operation.type == 'withdraw' %}negative{% else %}positive{% endif %}">
+                        {% if operation.type == 'withdraw' %}-{% else %}+{% endif %}${{ operation.Amount|floatformat:2 }}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-row">
+                        <i class="fas fa-calendar"></i>
+                        <span>{{ operation.Date1|date:"M d, Y H:i A" }}</span>
+                    </div>
+                    <div class="card-row">
+                        <i class="fas fa-credit-card"></i>
+                        <span>{{ operation.Method }}</span>
+                    </div>
+                    <div class="card-row">
+                        <i class="fas fa-hashtag"></i>
+                        <span>{{ operation.code|default:"No Reference Code" }}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="status-badge status-{{ operation.state|lower }}">
+                        <i class="fas fa-{% if operation.state == 'completed' %}check-circle{% elif operation.state == 'pending' %}clock{% else %}exclamation-triangle{% endif %}"></i>
+                        {{ operation.state|title }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <h3>No Transactions Yet</h3>
+            <p>Your transaction history will appear here once you start using your wallet</p>
+            <div class="empty-actions">
+                <a href="{% url 'app:add_money' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Make Your First Transaction
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Main Container */
+    .transaction-history-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        color: #198754;
+        margin-bottom: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .page-header p {
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+
+    /* Balance Card */
+    .balance-card {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        border-radius: 20px;
+        padding: 30px;
+        color: white;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(25, 135, 84, 0.3);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .balance-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .balance-icon {
+        font-size: 3rem;
+        opacity: 0.9;
+    }
+
+    .balance-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .balance-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 5px;
+    }
+
+    .balance-amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .balance-stats {
+        display: flex;
+        gap: 30px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .btn-outline {
+        background: transparent;
+        border: 2px solid rgba(25, 135, 84, 0.2);
+        color: #495057;
+    }
+
+    .btn-outline:hover, .btn-outline.active {
+        border-color: #198754;
+        color: #198754;
+        background: rgba(25, 135, 84, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(25, 135, 84, 0.3);
+    }
+
+    /* Transactions Section */
+    .transactions-section {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(25, 135, 84, 0.1);
+        border: 1px solid rgba(25, 135, 84, 0.1);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .section-header h2 {
+        color: #198754;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .summary-cards {
+        display: flex;
+        gap: 15px;
+    }
+
+    .summary-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 20px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+    }
+
+    .summary-card.income {
+        background: linear-gradient(135deg, #198754, #146c43);
+    }
+
+    .summary-card.expense {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+
+    .summary-card i {
+        font-size: 1.5rem;
+    }
+
+    .summary-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        display: block;
+    }
+
+    .summary-amount {
+        font-size: 1.2rem;
+        display: block;
+    }
+
+    /* Transaction Table */
+    .transaction-table-container {
+        overflow-x: auto;
+        border-radius: 15px;
+        border: 1px solid rgba(25, 135, 84, 0.1);
+        display: block;
+    }
+
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .transaction-table th {
+        background: rgba(25, 135, 84, 0.05);
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        color: #198754;
+        border-bottom: 2px solid rgba(25, 135, 84, 0.1);
+        white-space: nowrap;
+    }
+
+    .transaction-table td {
+        padding: 15px;
+        border-bottom: 1px solid rgba(25, 135, 84, 0.1);
+        vertical-align: middle;
+    }
+
+    .transaction-table tr:hover {
+        background: rgba(25, 135, 84, 0.03);
+    }
+
+    .transaction-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Table Elements */
+    .transaction-date {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .date-icon {
+        color: #198754;
+        font-size: 1.1rem;
+    }
+
+    .date-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .date-main {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .date-time {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    /* Badges */
+    .type-badge, .status-badge, .method-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
+    .type-deposit {
+        background: rgba(25, 135, 84, 0.15);
+        color: #0f5132;
+    }
+
+    .type-withdraw {
+        background: rgba(220, 53, 69, 0.15);
+        color: #721c24;
+    }
+
+    .status-completed {
+        background: rgba(25, 135, 84, 0.15);
+        color: #0f5132;
+    }
+
+    .status-pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #856404;
+    }
+
+    .status-failed {
+        background: rgba(220, 53, 69, 0.15);
+        color: #721c24;
+    }
+
+    .method-bank, .method-card {
+        background: rgba(25, 135, 84, 0.1);
+        color: #0f5132;
+    }
+
+    /* Amount Styling */
+    .amount {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .amount.positive {
+        color: #198754;
+    }
+
+    .amount.negative {
+        color: #dc3545;
+    }
+
+    /* Transaction Code */
+    .transaction-code {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Mobile Cards */
+    .transaction-cards {
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .transaction-card {
+        background: white;
+        border: 1px solid rgba(25, 135, 84, 0.1);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(25, 135, 84, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .transaction-card:hover {
+        box-shadow: 0 5px 20px rgba(25, 135, 84, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .card-amount {
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .card-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #6c757d;
+    }
+
+    .card-row i {
+        width: 16px;
+        text-align: center;
+        color: #198754;
+    }
+
+    .card-footer {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: #198754;
+        opacity: 0.3;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        color: #198754;
+        margin-bottom: 10px;
+    }
+
+    .empty-actions {
+        margin-top: 25px;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .balance-card {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .balance-stats {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .transaction-history-container {
+            padding: 15px;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .summary-cards {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .filter-actions {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .transaction-table-container {
+            display: none;
+        }
+
+        .transaction-cards {
+            display: flex;
+        }
+
+        .balance-amount {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .transactions-section {
+            padding: 20px;
+        }
+
+        .summary-cards {
+            flex-direction: column;
+        }
+
+        .balance-card {
+            padding: 20px;
+        }
+
+        .balance-stats {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+
+<script>
+    function filterTransactions(type) {
+        const rows = document.querySelectorAll('.transaction-row, .transaction-card');
+        const buttons = document.querySelectorAll('.filter-actions .btn');
+        
+        // Update active button
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Filter rows
+        rows.forEach(row => {
+            if (type === 'all') {
+                row.style.display = '';
+            } else {
+                if (row.dataset.type === type) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // Initialize with all transactions visible
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add active class to first filter button
+        document.querySelector('.filter-actions .btn').classList.add('active');
+    });
+</script>
+{% endblock %}

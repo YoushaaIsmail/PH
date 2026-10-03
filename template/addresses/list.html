@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Customer Addresses{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #e8f5e9;
+  }
+
+  .table th {
+    color: #198754;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+  }
+
+  .card-custom {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(90deg, #198754, #28a745);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .btn-light.text-primary {
+    color: #198754 !important;
+  }
+
+  .btn-light.text-primary:hover {
+    background-color: #198754;
+    color: white !important;
+  }
+
+  .table thead {
+    background-color: #d1e7dd;
+  }
+
+  .btn-primary {
+    background-color: #198754;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #157347;
+  }
+
+  .filter-section {
+    background-color: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+</style>
+
+<div class="card card-custom mb-4">
+  <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <!-- <a href="{% url 'app:address_create' %}" class="btn btn-light text-primary fw-semibold">
+      <i class="fa fa-plus me-1"></i> Add Address
+    </a> -->
+    <!-- Optional filters can go here -->
+  </div>
+
+  <div class="card-body bg-white">
+    {% if addresses %}
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle shadow-sm" style="background-color: #fdfdfd;">
+        <thead class="text-center">
+          <tr>
+            <th>Label</th>
+            <th>User</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>Postal Code</th>
+            <th>Phone</th>
+            <th>Default</th>
+            <th><i class="fa fa-gear me-1"></i> Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for addr in addresses %}
+          <tr class="text-center">
+            <td>{{ addr.label }}</td>
+            <td>{{ addr.user }}</td>
+            <td>{{ addr.address_line }}</td>
+            <td>{{ addr.city }}</td>
+            <td>{{ addr.postal_code }}</td>
+            <td>{{ addr.phone }}</td>
+            <td>
+              {% if addr.is_default %}
+                <span class="badge bg-success">Default</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+            <td style="display: flex; gap: 10px; justify-content: center;">
+              <a href="{% url 'app:address_edit' addr.pk %}" class="btn btn-sm btn-outline-success">
+                <i class="fa fa-edit"></i>
+              </a>
+              <a href="{% url 'app:address_delete' addr.pk %}" class="btn btn-sm btn-outline-danger">
+                <i class="fa fa-trash"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <p class="text-muted text-center mt-4">No addresses found.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

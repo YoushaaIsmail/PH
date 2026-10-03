@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Messages -->
+                    {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Order Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6>Order Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Order ID:</strong> {{ order.id }}</p>
+                                    <p><strong>User:</strong> {{ order.user.get_full_name|default:order.user.username }}</p>
+                                    <p><strong>Total Amount:</strong> ${{ order.total_amount|floatformat:2 }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Placed At:</strong> {{ order.placed_at|date:"M d, Y H:i" }}</p>
+                                    <p><strong>Delivery Fee:</strong> ${{ order.delivery_fee|floatformat:2 }}</p>
+                                    <p><strong>Items:</strong> {{ order.item_count }}</p>
+                                    {% if order.scheduled_for %}
+                                    <p><strong>Current Ready Date:</strong> {{ order.scheduled_for|date:"M d, Y H:i" }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Scheduled For Field (Manual Input) -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Ready Date & Time *</label>
+                                <input type="datetime-local" 
+                                       name="scheduled_for" 
+                                       id="id_scheduled_for"
+                                       class="form-control {% if form.scheduled_for.errors %}is-invalid{% endif %}"
+                                       value="{{ scheduled_value }}"
+                                       required>
+                                {% if form.scheduled_for.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.scheduled_for.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <small class="form-text text-muted">
+                                    When should this order be ready? Format: YYYY-MM-DDTHH:MM
+                                </small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.status.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Other Fields -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Assign Driver</label>
+                                {{ form.his_driver }}
+                                {% if form.his_driver.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.his_driver.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            
+                        </div>
+                        
+                        <!-- Additional Fields -->
+                        <div class="row mb-3">
+                           
+                            
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label class="form-label">Admin Notes</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.notes.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Hidden/optional fields -->
+                        {% if form.user %}
+                        <div class="mb-3">
+                            <label class="form-label">User</label>
+                            {{ form.user }}
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.prescription %}
+                        <div class="mb-3">
+                            <label class="form-label">Prescription</label>
+                            {{ form.prescription }}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Action Buttons -->
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Order
+                            </button>
+                            <a href="{% url 'app:order_listA' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                            <button type="button" class="btn btn-outline-info" onclick="setTomorrow()">
+                                Set Tomorrow 9 AM
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="clearDate()">
+                                Clear Date
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default date to tomorrow at 9 AM
+function setTomorrow() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    const hours = String(tomorrow.getHours()).padStart(2, '0');
+    const minutes = String(tomorrow.getMinutes()).padStart(2, '0');
+    
+    document.getElementById('id_scheduled_for').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Clear the date field
+function clearDate() {
+    document.getElementById('id_scheduled_for').value = '';
+}
+
+// Set min date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('id_scheduled_for');
+    if (dateInput) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        
+        // Set minimum date to today
+        dateInput.min = `${year}-${month}-${day}T00:00`;
+        
+        // If no value is set, you can set a default (optional)
+        if (!dateInput.value) {
+            // Uncomment to auto-set tomorrow 9 AM
+            // setTomorrow();
+        }
+    }
+});
+</script>
+
+<style>
+/* Optional styling */
+#id_scheduled_for {
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+.btn-outline-info, .btn-outline-warning {
+    margin-left: 5px;
+}
+</style>
+{% endblock %}

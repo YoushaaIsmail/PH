@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #e8f5e9;
+  }
+
+  .table th {
+    color: #198754;
+  }
+
+  .table th, .table td {
+    vertical-align: middle;
+  }
+
+  .card-custom {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(90deg, #198754, #28a745);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .btn-light.text-primary {
+    color: #198754 !important;
+  }
+
+  .btn-light.text-primary:hover {
+    background-color: #198754;
+    color: white !important;
+  }
+
+  .table thead {
+    background-color: #d1e7dd;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #198754;
+    border-color: #198754;
+  }
+
+  .pagination .page-link {
+    color: #198754;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #198754;
+    color: white;
+  }
+
+  .input-group .form-control:focus {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+  }
+
+  .btn-primary {
+    background-color: #198754;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #157347;
+  }
+</style>
+
+<div class="card card-custom mb-4">
+  <div class="card-header-custom d-flex justify-content-between align-items-center">
+    <!-- <a href="{% url 'app:order_createA' %}" class="btn btn-light text-primary fw-semibold">
+      <i class="fa fa-plus me-1"></i> New Order
+    </a> -->
+    <form method="GET" class="mb-4">
+      <div class="input-group shadow-sm">
+        <input type="text" name="search" class="form-control border-success" 
+               placeholder="Search by user name..." value="{{ search_query }}">
+        <button class="btn btn-primary" type="submit">
+          <i class="fa fa-search"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card-body bg-white">
+    <!-- 🔍 Search -->
+
+    {% if orders %}
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered align-middle shadow-sm" style="background-color: #fdfdfd;">
+        <thead class="text-center">
+          <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Placed At</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr class="text-center">
+            <td>{{ order.id }}</td>
+            <td>{{ order.get_status_display }}</td>
+            <td>{{ order.placed_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ order.notes|truncatechars:30 }}</td>
+            <td class="d-flex justify-content-center gap-2">
+              <a href="{% url 'app:order_edit' order.pk %}" class="btn btn-sm btn-outline-success"><i class="fa fa-edit"></i></a>
+              <a href="{% url 'app:order_deleteA' order.pk %}" class="btn btn-sm btn-outline-danger"><i class="fa fa-trash"></i></a>
+               <a href="{% url 'app:order_item_list' order.pk %}" class="btn btn-sm btn-outline-success"><i class="fa fa-eye"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 🔽 Pagination -->
+    {% if orders.has_other_pages %}
+    <nav class="d-flex justify-content-center mt-4">
+      <ul class="pagination pagination-sm">
+        {% if orders.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?search={{ search_query }}&page=1" title="First">
+              <i class="fas fa-angles-left"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?search={{ search_query }}&page={{ orders.previous_page_number }}" title="Previous">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-left"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-left"></i></span></li>
+        {% endif %}
+
+        {% for num in orders.paginator.page_range %}
+          {% if orders.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?search={{ search_query }}&page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if orders.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?search={{ search_query }}&page={{ orders.next_page_number }}" title="Next">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?search={{ search_query }}&page={{ orders.paginator.num_pages }}" title="Last">
+              <i class="fas fa-angles-right"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-chevron-right"></i></span></li>
+          <li class="page-item disabled"><span class="page-link"><i class="fas fa-angles-right"></i></span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    <!-- 🔼 Pagination End -->
+
+    {% else %}
+    <p class="text-muted">No orders found.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

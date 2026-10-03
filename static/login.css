@@ -1,0 +1,129 @@
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), #009688), url(ph1.jpg);
+            background-position: center;
+            background-size: cover;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+
+            margin: 0;
+            padding: 0;
+
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 80px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.137);
+            border: 1px solid white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            color: black;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+            color: #72f1e5;
+        }
+
+        .input-group {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            text-align: left;
+            margin-bottom: 10px;
+            font-weight: 100;
+            color: #009688;
+        }
+
+        .input-group input {
+            width: 87%;
+            padding: 10px 10px 10px 35px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 800;
+            background: linear-gradient(rgba(0, 0, 0, 0.5), #009688);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-top: 25px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), #72f1e5)
+        }
+
+        .messages {
+            margin-top: 15px;
+            text-align: center;
+            color: red;
+            font-size: 0.9rem;
+        }
+
+        .register-link {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .register-link a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        .container {
+    width: 90%;
+    max-width: 400px;
+    margin: 80px auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.137);
+    border: 1px solid white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: black;
+    box-sizing: border-box;
+}
+
+/* Responsive styles for smaller screens */
+@media (max-width: 480px) {
+    .container {
+        margin: 40px auto;
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .input-group input {
+        width: 100%;
+    }
+
+    button {
+        padding: 10px;
+        font-size: 1rem;
+    }
+
+    .input-group i {
+        font-size: 14px;
+    }
+}

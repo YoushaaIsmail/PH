@@ -1,0 +1,594 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Chat with" %} {{ other_user.username }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* إلغاء التثبيت وجعل المحادثة تتناسب مع المساحة المتاحة */
+    .chat-room-wrapper {
+        background: #e5ddd5;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 200px); /* ارتفاع مناسب مع مراعاة الهيدر والفوتر */
+        width: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+        width: 100%;
+        background: #efeae2;
+        position: relative;
+    }
+    
+    .chat-header {
+        background: #075e54;
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        flex-shrink: 0;
+    }
+    
+    .back-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+    
+    .back-btn:hover {
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .user-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: #128c7e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .user-name {
+        font-weight: bold;
+        font-size: 18px;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .user-status {
+        font-size: 12px;
+        opacity: 0.8;
+        color: white;
+    }
+    
+    /* منطقة الرسائل مع تمرير محسّن */
+    .messages-area {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 0;
+        scroll-behavior: smooth;
+    }
+    
+    /* تحسين شريط التمرير */
+    .messages-area::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .messages-area::-webkit-scrollbar-track {
+        background: #e0e0e0;
+        border-radius: 10px;
+    }
+    
+    .messages-area::-webkit-scrollbar-thumb {
+        background: #075e54;
+        border-radius: 10px;
+    }
+    
+    .messages-area::-webkit-scrollbar-thumb:hover {
+        background: #054d44;
+    }
+    
+    .message {
+        display: flex;
+        margin-bottom: 10px;
+        animation: fadeInUp 0.3s ease;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .message.sent {
+        justify-content: flex-end;
+    }
+    
+    .message.received {
+        justify-content: flex-start;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        padding: 10px 15px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+        position: relative;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+    
+    .sent .message-bubble {
+        background: #dcf8c5;
+        color: #000;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .received .message-bubble {
+        background: white;
+        color: #000;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .message-time {
+        font-size: 10px;
+        color: #667781;
+        margin-top: 5px;
+        text-align: right;
+    }
+    
+    /* زر التمرير للأسفل */
+    .scroll-to-bottom {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: #075e54;
+        color: white;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        z-index: 1100;
+        opacity: 0;
+        visibility: hidden;
+        border: none;
+    }
+    
+    body[dir="rtl"] .scroll-to-bottom {
+        right: auto;
+        left: 30px;
+    }
+    
+    .scroll-to-bottom.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .scroll-to-bottom:hover {
+        background: #0b6b5f;
+        transform: scale(1.05);
+    }
+    
+    /* منطقة الإدخال */
+    .input-area {
+        background: #f0f2f5;
+        padding: 15px 20px;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #e0e0e0;
+        flex-shrink: 0;
+    }
+    
+    #chat-message-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: none;
+        border-radius: 25px;
+        outline: none;
+        font-size: 15px;
+        background: white;
+    }
+    
+    #chat-message-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(7,94,84,0.2);
+    }
+    
+    #chat-message-submit {
+        background: #075e54;
+        border: none;
+        color: white;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+    
+    #chat-message-submit:hover {
+        background: #0b6b5f;
+        transform: scale(1.05);
+    }
+    
+    #chat-message-submit:active {
+        transform: scale(0.95);
+    }
+    
+    .typing-indicator {
+        font-size: 12px;
+        color: #667781;
+        padding: 5px 20px;
+        display: none;
+        flex-shrink: 0;
+    }
+    
+    /* رسالة غير مقروءة */
+    .unread-divider {
+        text-align: center;
+        margin: 10px 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .unread-divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #075e54;
+        opacity: 0.3;
+    }
+    
+    .unread-text {
+        background: #075e54;
+        color: white;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* تحسين للشاشات الصغيرة */
+    @media (max-width: 768px) {
+        .chat-room-wrapper {
+            height: calc(100vh - 160px);
+            border-radius: 8px;
+        }
+        
+        .chat-container {
+            max-width: 100%;
+        }
+        
+        .message-bubble {
+            max-width: 85%;
+        }
+        
+        .scroll-to-bottom {
+            bottom: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+        }
+        
+        body[dir="rtl"] .scroll-to-bottom {
+            right: auto;
+            left: 20px;
+        }
+        
+        .chat-header {
+            padding: 12px 15px;
+        }
+        
+        .input-area {
+            padding: 10px 15px;
+        }
+    }
+    
+    /* تحسين للشاشات الكبيرة */
+    @media (min-width: 1400px) {
+        .chat-container {
+            max-width: 1200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-room-wrapper">
+    <div class="chat-container">
+        <div class="chat-header">
+            <a href="{% url 'chat:user_list' %}" class="back-btn">←</a>
+            <div class="user-avatar">
+                {{ other_user.username|make_list|first|upper }}
+            </div>
+            <div class="user-details">
+                <div class="user-name">{{ other_user.username }}</div>
+                <div class="user-status" id="userStatus">{% trans "Connecting..." %}</div>
+            </div>
+        </div>
+        <div class="messages-area" id="messages-area">
+            <!-- الرسائل ستظهر هنا ديناميكياً -->
+        </div>
+        <div class="typing-indicator" id="typing-indicator">
+            {% trans "Typing..." %}
+        </div>
+        <div class="input-area">
+            <input type="text" id="chat-message-input" placeholder="{% trans 'Type a message...' %}">
+            <button id="chat-message-submit">➤</button>
+        </div>
+    </div>
+</div>
+
+<!-- زر التمرير للأسفل -->
+<button class="scroll-to-bottom" id="scrollToBottom">
+    <i class="fas fa-arrow-down"></i>
+</button>
+
+<script>
+    const otherUserId = {{ other_user.id }};
+    const currentUsername = "{{ request.user.username }}";
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(
+        protocol + window.location.host + '/ws/chat/' + otherUserId + '/'
+    );
+
+    const messagesArea = document.getElementById('messages-area');
+    const messageInput = document.getElementById('chat-message-input');
+    const submitBtn = document.getElementById('chat-message-submit');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const userStatusSpan = document.getElementById('userStatus');
+    const scrollToBottomBtn = document.getElementById('scrollToBottom');
+
+    let typingTimeout = null;
+    let userScrolledUp = false;
+    let scrollTimeout = null;
+
+    // دالة التمرير للأسفل
+    function scrollToBottom(smooth = true) {
+        if (!userScrolledUp) {
+            messagesArea.scrollTo({
+                top: messagesArea.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        }
+    }
+
+    // التحقق إذا كان المستخدم في الأسفل
+    function isScrolledToBottom() {
+        const threshold = 50;
+        return messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight <= threshold;
+    }
+
+    // معالج حدث التمرير
+    function handleScroll() {
+        if (isScrolledToBottom()) {
+            userScrolledUp = false;
+            scrollToBottomBtn.classList.remove('show');
+        } else {
+            userScrolledUp = true;
+            scrollToBottomBtn.classList.add('show');
+        }
+
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            if (isScrolledToBottom()) {
+                userScrolledUp = false;
+                scrollToBottomBtn.classList.remove('show');
+            }
+        }, 3000);
+    }
+
+    scrollToBottomBtn.addEventListener('click', () => {
+        userScrolledUp = false;
+        scrollToBottom(true);
+        scrollToBottomBtn.classList.remove('show');
+    });
+
+    messagesArea.addEventListener('scroll', handleScroll);
+
+    chatSocket.onopen = function(e) {
+        console.log('WebSocket connected');
+        userStatusSpan.innerText = '{% trans "Online" %}';
+    };
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        displayMessage(data.sender, data.content, data.timestamp);
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('WebSocket closed unexpectedly');
+        userStatusSpan.innerText = '{% trans "Offline" %}';
+        const offlineMsg = document.createElement('div');
+        offlineMsg.className = 'message';
+        offlineMsg.innerHTML = '<div class="message-bubble" style="background:#ffdddd;">{% trans "Connection lost. Please refresh the page." %}</div>';
+        messagesArea.appendChild(offlineMsg);
+        scrollToBottom();
+    };
+
+    chatSocket.onerror = function(e) {
+        console.error('WebSocket error', e);
+        userStatusSpan.innerText = '{% trans "Error" %}';
+    };
+
+    function displayMessage(sender, content, timestamp, isNew = true) {
+        const isSent = (sender === currentUsername);
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'message-bubble';
+        const timeStr = timestamp ? new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+        bubbleDiv.innerHTML = `
+            <div>${escapeHtml(content)}</div>
+            <div class="message-time">${timeStr}</div>
+        `;
+        messageDiv.appendChild(bubbleDiv);
+        messagesArea.appendChild(messageDiv);
+        
+        if (!userScrolledUp || isSent) {
+            scrollToBottom();
+        } else if (isScrolledToBottom()) {
+            userScrolledUp = false;
+            scrollToBottom();
+            scrollToBottomBtn.classList.remove('show');
+        }
+        
+        if (userScrolledUp && !isSent && isNew) {
+            scrollToBottomBtn.style.animation = 'pulse 0.5s ease';
+            setTimeout(() => {
+                scrollToBottomBtn.style.animation = '';
+            }, 500);
+        }
+    }
+
+    function sendMessage() {
+        const content = messageInput.value.trim();
+        if (content === '') return;
+        
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ 'content': content }));
+            messageInput.value = '';
+            messageInput.focus();
+            userScrolledUp = false;
+        } else {
+            alert('{% trans "Not connected. Please refresh the page." %}');
+        }
+    }
+
+    messageInput.addEventListener('input', function() {
+        if (typingTimeout) clearTimeout(typingTimeout);
+        typingIndicator.style.display = 'block';
+        typingTimeout = setTimeout(() => {
+            typingIndicator.style.display = 'none';
+        }, 1000);
+    });
+
+    submitBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function markMessagesAsRead() {
+        fetch('/chat/mark-read/' + otherUserId + '/', {
+            method: 'POST',
+            headers: { 
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            }
+        }).catch(err => console.error('Error marking messages as read:', err));
+    }
+    
+    markMessagesAsRead();
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    messageInput.focus();
+    
+    setTimeout(() => {
+        scrollToBottom(false);
+        userScrolledUp = false;
+    }, 500);
+</script>
+
+<style>
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        50% {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(7,94,84,0.4);
+        }
+        100% {
+            transform: scale(1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+    }
+</style>
+{% endblock %}

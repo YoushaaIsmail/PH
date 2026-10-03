@@ -1,0 +1,897 @@
+<!-- templates/orders/order_locations.html -->
+{% extends 'base1.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .container { max-width: 1400px; margin: 20px auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #198754, #20c997); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    .map-container { height: 550px; border-radius: 12px; overflow: hidden; margin: 20px 0; border: 2px solid #e0e0e0; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .info-card { background: white; padding: 20px; border-radius: 10px; margin: 10px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    .stats-box { text-align: center; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    .stats-value { font-size: 1.8rem; font-weight: bold; }
+    .stats-label { font-size: 0.9rem; color: #6c757d; }
+    
+    /* Marker styles */
+    .driver-marker {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #6610f2);
+        border: 4px solid white;
+        box-shadow: 0 0 20px rgba(0, 123, 255, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 22px;
+        animation: pulse-driver 2s infinite;
+        position: relative;
+    }
+    
+    .customer-marker {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #dc3545, #ff6b6b);
+        border: 3px solid white;
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        position: relative;
+    }
+    
+    .store-marker {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: 3px solid white;
+        box-shadow: 0 0 15px rgba(40, 167, 69, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 16px;
+    }
+    
+    @keyframes pulse-driver {
+        0% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 123, 255, 0.6); }
+        50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(0, 123, 255, 0.8); }
+        100% { transform: scale(1); box-shadow: 0 0 20px rgba(0, 123, 255, 0.6); }
+    }
+    
+    /* Route info panel */
+    .route-info {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    
+    .map-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Status badges */
+    .badge-online { background: linear-gradient(135deg, #28a745, #20c997); }
+    .badge-offline { background: linear-gradient(135deg, #6c757d, #adb5bd); }
+    .badge-moving { background: linear-gradient(135deg, #007bff, #6610f2); }
+</style>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3><i class="fas fa-truck-moving me-2"></i> Live Driver Tracking - Order #{{ order.id|slice:":8" }}</h3>
+                <div class="mt-2 d-flex flex-wrap align-items-center">
+                    <span class="badge bg-light text-dark me-2">Status: {{ order.get_status_display }}</span>
+                    <span class="badge bg-warning me-2"><i class="fas fa-clock"></i> Auto-updates every 10s</span>
+                    <span id="connectionStatus" class="badge bg-success me-2"><i class="fas fa-wifi"></i> Connected</span>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'app:order_list' %}" class="btn btn-light btn-sm me-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button onclick="printMap()" class="btn btn-outline-light btn-sm me-2">
+                    <i class="fas fa-print"></i> Print
+                </button>
+                <button onclick="shareTracking()" class="btn btn-light btn-sm">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Map Column -->
+        <div class="col-lg-8">
+            <div class="position-relative">
+                <div id="map" class="map-container"></div>
+                <!-- Map Controls -->
+                <div class="map-controls">
+                    <div class="btn-group-vertical">
+                        <button onclick="centerOnDriver()" class="btn btn-primary btn-sm mb-1" title="Center on Driver">
+                            <i class="fas fa-location-arrow"></i>
+                        </button>
+                        <button onclick="centerOnCustomer()" class="btn btn-danger btn-sm mb-1" title="Center on Customer">
+                            <i class="fas fa-user"></i>
+                        </button>
+                        <button onclick="showAllLocations()" class="btn btn-success btn-sm mb-1" title="Show All">
+                            <i class="fas fa-expand-alt"></i>
+                        </button>
+                        <button onclick="toggleRoute()" class="btn btn-info btn-sm mb-1" title="Toggle Route">
+                            <i class="fas fa-route"></i>
+                        </button>
+                        <button onclick="toggleTraffic()" class="btn btn-warning btn-sm" title="Toggle Traffic">
+                            <i class="fas fa-car"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Route Information -->
+            <div class="route-info" id="routeInfo" style="display: none;">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="stats-box">
+                            <div class="stats-value" id="distanceValue">0.0</div>
+                            <div class="stats-label">Distance (km)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-box">
+                            <div class="stats-value" id="durationValue">0</div>
+                            <div class="stats-label">Est. Time (min)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stats-box">
+                            <div class="stats-value" id="speedValue">0</div>
+                            <div class="stats-label">Avg Speed (km/h)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="progress" style="height: 8px;">
+                        <div id="progressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted">Delivery Progress</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Information Column -->
+        <div class="col-lg-4">
+            <!-- Driver Information -->
+            <div class="info-card">
+                <h5><i class="fas fa-user-circle me-2 text-primary"></i> Driver Information</h5>
+                <div id="driverInfo" class="mb-3">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted small">Loading driver information...</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">Latitude</small>
+                        <div id="driverLat" class="h5">--</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Longitude</small>
+                        <div id="driverLon" class="h5">--</div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted d-block">Last Update</small>
+                        <div id="lastUpdate" class="font-weight-bold">--:--:--</div>
+                    </div>
+                    <div>
+                        <button onclick="updateDriver()" class="btn btn-primary btn-sm" id="refreshBtn">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Order & Customer Information -->
+            <div class="info-card">
+                <h5><i class="fas fa-clipboard-list me-2 text-success"></i> Order Details</h5>
+                <div class="row">
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Order ID</small>
+                        <div class="font-weight-bold">#{{ order.id|slice:":8" }}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Status</small>
+                        <div><span class="badge bg-warning">{{ order.get_status_display }}</span></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">Customer</small>
+                    <div class="font-weight-bold">{{ order.user.get_full_name|default:order.user.username }}</div>
+                    {% if order.user.phone %}
+                    <small class="text-muted">Phone: {{ order.user.phone }}</small>
+                    {% endif %}
+                </div>
+                
+                {% if order.address %}
+                <div class="mb-3">
+                    <small class="text-muted">Delivery Address</small>
+                    <div class="font-weight-bold">{{ order.address.address|default:"Not specified" }}</div>
+                    <div class="small">
+                        <span id="customerCoords">
+                            {% if order.address.x and order.address.y %}
+                            {{ order.address.x|floatformat:6 }}, {{ order.address.y|floatformat:6 }}
+                            {% else %}
+                            Coordinates not available
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Total Amount</small>
+                        <div class="font-weight-bold">${{ order.total_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Delivery Fee</small>
+                        <div class="font-weight-bold">${{ order.delivery_fee|floatformat:2 }}</div>
+                    </div>
+                </div>
+                
+                <hr>
+                <div class="text-center">
+                    <button onclick="openNavigation()" class="btn btn-success btn-sm me-2">
+                        <i class="fas fa-directions"></i> Open Navigation
+                    </button>
+                    <button onclick="contactDriver()" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-phone"></i> Contact Driver
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Store Information -->
+            {% if about %}
+            <div class="info-card">
+                <h5><i class="fas fa-store me-2 text-danger"></i> Store Information</h5>
+                <div class="mb-2">
+                    <small class="text-muted">Store Location</small>
+                    <div>{{ about.location_name|default:"Main Store" }}</div>
+                </div>
+                <div class="small">
+                    Coordinates: 
+                    <span id="storeCoords">
+                        {% if about.loction_x and about.loction_y %}
+                        {{ about.loction_x|floatformat:6 }}, {{ about.loction_y|floatformat:6 }}
+                        {% else %}
+                        Not available
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Load TomTom Maps -->
+<link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.23.0/maps/maps.css" />
+<script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.23.0/maps/maps-web.min.js"></script>
+<script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.23.0/services/services-web.min.js"></script>
+
+<script>
+    // ================= CONFIG =================
+    const API_KEY = 'wncqPXyuwK1DoGAegYSHAJ5SyE3ATzh7';
+    const DRIVER_API_URL = "/app/api/order/{{ order.id }}/driver-location/";
+    let map = null;
+    let driverMarker = null;
+    let customerMarker = null;
+    let storeMarker = null;
+    let routeLayer = null;
+    let updateInterval = null;
+    let trafficLayer = null;
+    
+    // Location data
+    let currentDriverLocation = null;
+    let customerLocation = null;
+    let storeLocation = null;
+    
+    {% if order.address and order.address.x and order.address.y %}
+        customerLocation = {
+            lat: {{ order.address.x }},
+            lon: {{ order.address.y }}
+        };
+    {% endif %}
+    
+    {% if about and about.loction_x and about.loction_y %}
+        storeLocation = {
+            lat: {{ about.loction_x }},
+            lon: {{ about.loction_y }}
+        };
+    {% endif %}
+
+    // ================= INITIALIZE =================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Enhanced tracking page loaded');
+        initMap();
+        updateDriver();
+        startAutoRefresh();
+    });
+
+    // ================= MAP FUNCTIONS =================
+    function initMap() {
+        try {
+            // Determine initial center
+            let centerLat = 33.513;
+            let centerLon = 36.276;
+            let zoom = 12;
+            
+            // If we have customer location, center on it
+            if (customerLocation) {
+                centerLat = customerLocation.lat;
+                centerLon = customerLocation.lon;
+                zoom = 14;
+            }
+            
+            // Create map
+            map = tt.map({
+                key: API_KEY,
+                container: 'map',
+                center: [centerLon, centerLat],
+                zoom: zoom,
+                language: 'en-GB'
+            });
+            
+            // Add controls
+            map.addControl(new tt.NavigationControl());
+            map.addControl(new tt.FullscreenControl());
+            
+            // Add customer marker
+            if (customerLocation) {
+                addCustomerMarker();
+            }
+            
+            // Add store marker
+            if (storeLocation) {
+                addStoreMarker();
+            }
+            
+        } catch (error) {
+            console.error('Map initialization error:', error);
+            showMapError(error);
+        }
+    }
+
+    function addCustomerMarker() {
+        if (!map || !customerLocation) return;
+        
+        const customerIcon = document.createElement('div');
+        customerIcon.className = 'customer-marker';
+        customerIcon.innerHTML = '<i class="fas fa-home"></i>';
+        
+        customerMarker = new tt.Marker({
+            element: customerIcon,
+            anchor: 'bottom'
+        })
+        .setLngLat([customerLocation.lon, customerLocation.lat])
+        .addTo(map);
+        
+        // Add popup
+        const popup = new tt.Popup({offset: 30})
+            .setLngLat([customerLocation.lon, customerLocation.lat])
+            .setHTML(`
+                <div style="padding: 10px; min-width: 200px;">
+                    <h6 style="margin: 0 0 5px 0; color: #dc3545;">
+                        <i class="fas fa-home"></i> Customer Location
+                    </h6>
+                    <p style="margin: 5px 0; font-size: 12px;">
+                        {{ order.user.get_full_name|default:order.user.username }}
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px;">
+                        {% if order.address %}
+                        {{ order.address.address|default:"Address not specified" }}
+                        {% endif %}
+                    </p>
+                    <button onclick="centerOnCustomer()" class="btn btn-sm btn-danger btn-block mt-2">
+                        <i class="fas fa-location-arrow"></i> Center Here
+                    </button>
+                </div>
+            `);
+        
+        customerMarker.setPopup(popup);
+    }
+
+    function addStoreMarker() {
+        if (!map || !storeLocation) return;
+        
+        const storeIcon = document.createElement('div');
+        storeIcon.className = 'store-marker';
+        storeIcon.innerHTML = '<i class="fas fa-store"></i>';
+        
+        storeMarker = new tt.Marker({
+            element: storeIcon,
+            anchor: 'bottom'
+        })
+        .setLngLat([storeLocation.lon, storeLocation.lat])
+        .addTo(map);
+        
+        // Add popup
+        const popup = new tt.Popup({offset: 30})
+            .setLngLat([storeLocation.lon, storeLocation.lat])
+            .setHTML(`
+                <div style="padding: 10px; min-width: 200px;">
+                    <h6 style="margin: 0 0 5px 0; color: #28a745;">
+                        <i class="fas fa-store"></i> Pharmacy Store
+                    </h6>
+                    <p style="margin: 5px 0; font-size: 12px;">
+                        {{ about.location_name|default:"Main Store" }}
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px;">
+                        {% if about.phone %}
+                        Phone: {{ about.phone }}
+                        {% endif %}
+                    </p>
+                </div>
+            `);
+        
+        storeMarker.setPopup(popup);
+    }
+
+    // ================= DRIVER LOCATION UPDATES =================
+    function updateDriver() {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        refreshBtn.disabled = true;
+        
+        fetch(DRIVER_API_URL)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                document.getElementById('lastUpdate').textContent = timeStr;
+                
+                if (data.success && data.current_x && data.current_y) {
+                    const driverLat = data.current_y;
+                    const driverLon = data.current_x;
+                    
+                    currentDriverLocation = { lat: driverLat, lon: driverLon };
+                    updateDriverUI(data, driverLat, driverLon);
+                    updateDriverMarker(driverLon, driverLat, data);
+                    
+                    // Calculate route if customer location is available
+                    if (customerLocation) {
+                        calculateRoute(driverLon, driverLat, customerLocation.lon, customerLocation.lat);
+                    }
+                } else {
+                    showNoDriverMessage(data.message || 'No driver assigned');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching driver location:', error);
+                document.getElementById('connectionStatus').className = 'badge bg-danger';
+                document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-exclamation-triangle"></i> Disconnected';
+            })
+            .finally(() => {
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+            });
+    }
+
+    function updateDriverMarker(lon, lat, driverData) {
+        if (!map) return;
+        
+        // Remove old marker
+        if (driverMarker) {
+            driverMarker.remove();
+        }
+        
+        // Create custom driver marker
+        const driverIcon = document.createElement('div');
+        driverIcon.className = 'driver-marker';
+        
+        // Add animation class based on status
+        if (driverData.is_online) {
+            driverIcon.style.background = 'linear-gradient(135deg, #007bff, #6610f2)';
+        } else {
+            driverIcon.style.background = 'linear-gradient(135deg, #6c757d, #adb5bd)';
+            driverIcon.style.animation = 'none';
+        }
+        
+        // Add direction indicator if available
+        if (driverData.heading) {
+            driverIcon.innerHTML = `
+                <i class="fas fa-truck" style="transform: rotate(${driverData.heading}deg)"></i>
+                <div class="direction-indicator" style="color: white;"></div>
+            `;
+        } else {
+            driverIcon.innerHTML = '<i class="fas fa-truck"></i>';
+        }
+        
+        // Add marker to map
+        driverMarker = new tt.Marker({
+            element: driverIcon,
+            anchor: 'bottom'
+        })
+        .setLngLat([lon, lat])
+        .addTo(map);
+        
+        // Add popup
+        const popup = new tt.Popup({offset: 40})
+            .setLngLat([lon, lat])
+            .setHTML(`
+                <div style="padding: 12px; min-width: 220px;">
+                    <h6 style="margin: 0 0 8px 0; color: #007bff;">
+                        <i class="fas fa-truck"></i> ${driverData.driver_name || 'Delivery Driver'}
+                    </h6>
+                    <div style="margin: 5px 0; font-size: 12px;">
+                        <strong>Vehicle:</strong> ${driverData.vehicle_type || 'Not specified'}
+                    </div>
+                    <div style="margin: 5px 0; font-size: 12px;">
+                        <strong>Plate:</strong> ${driverData.license_plate || '--'}
+                    </div>
+                    <div style="margin: 5px 0; font-size: 12px; color: ${driverData.is_online ? '#28a745' : '#6c757d'}">
+                        <i class="fas fa-circle"></i>
+                        ${driverData.is_online ? 'Online - Tracking Active' : 'Offline'}
+                    </div>
+                    <div class="mt-3">
+                        <button onclick="centerOnDriver()" class="btn btn-sm btn-primary me-2">
+                            <i class="fas fa-location-arrow"></i> Center
+                        </button>
+                        <button onclick="openDriverNavigation(${lat}, ${lon})" class="btn btn-sm btn-success">
+                            <i class="fas fa-directions"></i> Navigate
+                        </button>
+                    </div>
+                </div>
+            `);
+        
+        driverMarker.setPopup(popup);
+    }
+
+    // ================= ROUTE CALCULATION =================
+    function calculateRoute(startLon, startLat, endLon, endLat) {
+        if (!startLon || !startLat || !endLon || !endLat) return;
+        
+        const routeService = tt.services.calculateRoute({
+            key: API_KEY,
+            traffic: false
+        });
+        
+        routeService
+            .query({
+                locations: `${startLat},${startLon}:${endLat},${endLon}`,
+                language: 'en-US'
+            })
+            .then(function(response) {
+                const route = response.routes[0];
+                if (route) {
+                    displayRoute(route);
+                    updateRouteInfo(route);
+                }
+            })
+            .catch(function(error) {
+                console.error('Route calculation error:', error);
+            });
+    }
+
+    function displayRoute(route) {
+        // Remove existing route layer
+        if (routeLayer) {
+            map.removeLayer(routeLayer.id);
+            routeLayer = null;
+        }
+        
+        // Get route geometry
+        const routeGeometry = route.legs[0].points;
+        const coordinates = routeGeometry.map(point => [point.lng, point.lat]);
+        
+        // Create route layer
+        routeLayer = {
+            id: 'route-layer',
+            type: 'line',
+            source: {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: coordinates
+                    }
+                }
+            },
+            paint: {
+                'line-color': '#007bff',
+                'line-width': 4,
+                'line-opacity': 0.7
+            }
+        };
+        
+        map.addLayer(routeLayer);
+        
+        // Show route info panel
+        document.getElementById('routeInfo').style.display = 'block';
+    }
+
+    function updateRouteInfo(route) {
+        const summary = route.summary;
+        const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
+        const durationMin = Math.ceil(summary.travelTimeInSeconds / 60);
+        const avgSpeed = summary.lengthInMeters > 0 ? 
+            ((summary.lengthInMeters / summary.travelTimeInSeconds) * 3.6).toFixed(0) : 0;
+        
+        // Update UI
+        document.getElementById('distanceValue').textContent = distanceKm;
+        document.getElementById('durationValue').textContent = durationMin;
+        document.getElementById('speedValue').textContent = avgSpeed;
+        
+        // Update progress bar (example logic)
+        if (currentDriverLocation && customerLocation) {
+            const totalDistance = summary.lengthInMeters;
+            const currentDistance = calculateDistance(
+                currentDriverLocation.lon, currentDriverLocation.lat,
+                customerLocation.lon, customerLocation.lat
+            );
+            
+            const progress = totalDistance > 0 ? 
+                Math.max(0, Math.min(100, ((totalDistance - currentDistance) / totalDistance) * 100)) : 0;
+            
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+    }
+
+    function calculateDistance(lon1, lat1, lon2, lat2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c * 1000; // Distance in meters
+    }
+
+    // ================= UI UPDATES =================
+    function updateDriverUI(driverData, lat, lon) {
+        const driverInfoDiv = document.getElementById('driverInfo');
+        
+        driverInfoDiv.innerHTML = `
+            <div class="d-flex align-items-center mb-3">
+                <div class="driver-marker me-3">
+                    <i class="fas fa-truck"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0">${driverData.driver_name || 'Delivery Driver'}</h5>
+                    <span class="badge ${driverData.is_online ? 'badge-online' : 'badge-offline'}">
+                        <i class="fas fa-circle"></i>
+                        ${driverData.is_online ? 'Online' : 'Offline'}
+                    </span>
+                </div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">Vehicle Type</small>
+                <div>${driverData.vehicle_type || 'Not specified'}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">License Plate</small>
+                <div>${driverData.license_plate || '--'}</div>
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">Phone Number</small>
+                <div>${driverData.phone || 'Not available'}</div>
+            </div>
+        `;
+        
+        document.getElementById('driverLat').textContent = lat ? lat.toFixed(6) : '--';
+        document.getElementById('driverLon').textContent = lon ? lon.toFixed(6) : '--';
+        document.getElementById('connectionStatus').className = 'badge bg-success';
+        document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-wifi"></i> Connected';
+    }
+
+    // ================= MAP CONTROLS =================
+    function centerOnDriver() {
+        if (driverMarker && map) {
+            const position = driverMarker.getLngLat();
+            map.flyTo({
+                center: [position.lng, position.lat],
+                zoom: 16,
+                duration: 1000
+            });
+        } else if (currentDriverLocation) {
+            map.flyTo({
+                center: [currentDriverLocation.lon, currentDriverLocation.lat],
+                zoom: 16,
+                duration: 1000
+            });
+        }
+    }
+
+    function centerOnCustomer() {
+        if (customerMarker && map) {
+            const position = customerMarker.getLngLat();
+            map.flyTo({
+                center: [position.lng, position.lat],
+                zoom: 16,
+                duration: 1000
+            });
+        }
+    }
+
+    function showAllLocations() {
+        const bounds = new tt.LngLatBounds();
+        
+        if (driverMarker) bounds.extend(driverMarker.getLngLat());
+        if (customerMarker) bounds.extend(customerMarker.getLngLat());
+        if (storeMarker) bounds.extend(storeMarker.getLngLat());
+        
+        if (!bounds.isEmpty()) {
+            map.fitBounds(bounds, { padding: 80, duration: 1500 });
+        }
+    }
+
+    function toggleRoute() {
+        if (routeLayer && map.getLayer(routeLayer.id)) {
+            map.removeLayer(routeLayer.id);
+            document.getElementById('routeInfo').style.display = 'none';
+        } else if (currentDriverLocation && customerLocation) {
+            calculateRoute(
+                currentDriverLocation.lon, currentDriverLocation.lat,
+                customerLocation.lon, customerLocation.lat
+            );
+        }
+    }
+
+    function toggleTraffic() {
+        if (trafficLayer) {
+            map.removeLayer(trafficLayer);
+            trafficLayer = null;
+        } else {
+            trafficLayer = {
+                id: 'traffic-layer',
+                type: 'line',
+                source: {
+                    type: 'vector',
+                    url: 'tomtom://traffic'
+                },
+                'source-layer': 'traffic',
+                paint: {
+                    'line-color': [
+                        'case',
+                        ['==', ['get', 'flowSegmentData'], 'low'], '#00ff00',
+                        ['==', ['get', 'flowSegmentData'], 'medium'], '#ffff00',
+                        ['==', ['get', 'flowSegmentData'], 'high'], '#ff0000',
+                        '#cccccc'
+                    ],
+                    'line-width': 4,
+                    'line-opacity': 0.6
+                }
+            };
+            map.addLayer(trafficLayer);
+        }
+    }
+
+    // ================= UTILITY FUNCTIONS =================
+    function openNavigation() {
+        if (customerLocation) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${customerLocation.lat},${customerLocation.lon}&travelmode=driving`, '_blank');
+        }
+    }
+
+    function openDriverNavigation(lat, lon) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`, '_blank');
+    }
+
+    function contactDriver() {
+        alert('Contact driver functionality would be implemented here');
+    }
+
+    function printMap() {
+        window.print();
+    }
+
+    function shareTracking() {
+        const url = window.location.href;
+        const text = `Track delivery for Order #{{ order.id|slice:":8" }}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                title: 'Delivery Tracking',
+                text: text,
+                url: url
+            });
+        } else {
+            navigator.clipboard.writeText(url)
+                .then(() => alert('Tracking link copied to clipboard!'))
+                .catch(() => alert('Could not copy link'));
+        }
+    }
+
+    function showNoDriverMessage(message) {
+        const driverInfoDiv = document.getElementById('driverInfo');
+        
+        driverInfoDiv.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                <h6 class="text-muted">No Driver Assigned</h6>
+                <p class="small text-muted mb-3">${message}</p>
+                <p class="small text-muted">
+                    A driver will be assigned when the order is ready for delivery.
+                </p>
+            </div>
+        `;
+        
+        document.getElementById('driverLat').textContent = '--';
+        document.getElementById('driverLon').textContent = '--';
+        document.getElementById('connectionStatus').className = 'badge bg-warning';
+        document.getElementById('connectionStatus').innerHTML = '<i class="fas fa-user-slash"></i> No Driver';
+        
+        if (driverMarker) {
+            driverMarker.remove();
+            driverMarker = null;
+        }
+        
+        // Hide route info
+        document.getElementById('routeInfo').style.display = 'none';
+    }
+
+    function showMapError(error) {
+        document.getElementById('map').innerHTML = `
+            <div style="padding: 60px; text-align: center; background: #f8f9fa; border-radius: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                <h4 class="mb-3">Map Loading Error</h4>
+                <p class="mb-4 text-muted">${error.message || 'Failed to load map'}</p>
+                <div>
+                    <button onclick="initMap()" class="btn btn-primary me-2">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                    <button onclick="location.reload()" class="btn btn-outline-secondary">
+                        <i class="fas fa-sync"></i> Reload Page
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ================= AUTO REFRESH =================
+    function startAutoRefresh() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+        updateInterval = setInterval(updateDriver, 30000); // 10 seconds
+    }
+
+    // ================= CLEANUP =================
+    window.addEventListener('beforeunload', function() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+    });
+</script>
+{% endblock %}

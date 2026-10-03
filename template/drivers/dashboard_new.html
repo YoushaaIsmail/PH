@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.23.0/maps/maps.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .navbar-driver {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            height: 60px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1030;
+        }
+        
+        .sidebar {
+            background: white;
+            height: calc(100vh - 60px);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            overflow-y: auto;
+            width: 350px;
+            position: fixed;
+            left: 0;
+            top: 60px;
+            bottom: 0;
+            z-index: 1020;
+        }
+        
+        .map-container {
+            position: fixed;
+            left: 350px;
+            right: 0;
+            top: 60px;
+            bottom: 0;
+            height: calc(100vh - 60px);
+            width: calc(100% - 350px);
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+        
+        .driver-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .driver-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .driver-card.order-active {
+            border-left: 4px solid #3498db !important;
+            background-color: #f0f8ff !important;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2) !important;
+        }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .status-ready { background: #d1ecf1; color: #0c5460; }
+        .status-delivering { background: #cce5ff; color: #004085; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-completed { background: #d4edda; color: #155724; }
+        
+        .map-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            min-width: 250px;
+        }
+        
+        .marker-driver {
+            background-color: #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            border: 3px solid white;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .marker-customer {
+            background-color: #e74c3c;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            position: relative;
+        }
+        
+        .marker-customer.active {
+            animation: pulse-customer 1.5s infinite;
+        }
+        
+        .marker-store {
+            background-color: #2ecc71;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            border: 3px solid white;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .location-status {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background: white;
+            border-radius: 10px;
+            padding: 10px 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            font-size: 12px;
+            min-width: 200px;
+        }
+        
+        .location-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .location-online { background-color: #27ae60; }
+        
+        .customer-info {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+            min-width: 300px;
+            max-width: 400px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes pulse-customer {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        
+        .customer-marker-label {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #e74c3c;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        
+        /* Remove Bootstrap container padding */
+        .container-fluid.p-0 {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        
+        /* Fix for Bootstrap row */
+        .row.g-0 {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-driver px-3">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-light" href="#">
+                <i class="fas fa-steering-wheel me-2"></i>
+                Driver Dashboard
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">
+                    <i class="fas fa-user-circle me-1"></i>
+                    {{ driver.user.username }}
+                </span>
+                <a href="{% url 'app:driver_logout' %}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <div class="sidebar">
+                <div class="p-3 border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                        Orders ({{ assigned_orders|length }})
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1">
+                        Click on an order to show customer location on map
+                    </p>
+                </div>
+                
+                <div class="p-3">
+                    {% if assigned_orders %}
+                        <div id="ordersList">
+                            {% for order in assigned_orders %}
+                                <div class="driver-card order-selectable" 
+                                     onclick="showCustomerLocation('{{ order.id }}', this)"
+                                     data-order-id="{{ order.id }}"
+                                     data-customer-x="{{ order.address.y|default:0 }}"
+                                     data-customer-y="{{ order.address.x|default:0 }}"
+                                     data-customer-name="{{ order.user.get_full_name|default:order.user.username }}"
+                                     data-customer-address="{{ order.address.label|default:'Address not specified' }}"
+                                     data-customer-phone="{{ order.address.phone|default:'Phone not available' }}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">Order #{{ order.id|slice:":8" }}</h6>
+                                            <p class="text-muted small mb-1">
+                                                <i class="fas fa-user me-1"></i>
+                                                {{ order.user.get_full_name|default:order.user.username }}
+                                            </p>
+                                            <p class="text-muted small mb-2">
+                                                <i class="fas fa-map-marker-alt me-1"></i>
+                                                {{ order.address.city|default:"No address" }}
+                                            </p>
+                                        </div>
+                                        <span class="status-badge status-{{ order.status }}">
+                                            {{ order.status|title }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <div>
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-box me-1"></i>
+                                                {{ order.item_count }} items
+                                            </span>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold">${{ order.total_amount|floatformat:2 }}</div>
+                                            <small class="text-muted">+ ${{ order.delivery_fee|floatformat:2 }} delivery</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm flex-fill location-btn"
+                                                onclick="showCustomerLocation('{{ order.id }}', this.closest('.driver-card'))">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            Show Location
+                                        </button>
+                                        {% if order.status == 'delivering' %}
+                                        <button class="btn btn-success btn-sm flex-fill complete-btn"
+                                                onclick="completeOrder('{{ order.id }}', event)">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Deliver
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No orders assigned</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div class="location-status">
+                    <div class="d-flex align-items-center">
+                        <div class="location-indicator location-online" id="mapStatusIndicator"></div>
+                        <div>
+                            <span id="mapStatusText">Live Tracking Active</span><br>
+                            <small class="text-muted" id="mapLocationInfo">Getting location...</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="map"></div>
+                
+                <div class="customer-info" id="customerInfoPanel" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="mb-0" id="customerName">Customer Name</h6>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="closeCustomerPanel()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <p class="text-muted small mb-2" id="customerAddress">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        <span id="customerAddressText">Address will appear here</span>
+                    </p>
+                    <p class="text-muted small mb-3" id="customerPhone">
+                        <i class="fas fa-phone me-1"></i>
+                        <span id="customerPhoneText">Phone not available</span>
+                    </p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm" onclick="navigateToCustomer()">
+                            <i class="fas fa-directions me-1"></i> Navigate to Customer
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="centerOnCustomer()">
+                            <i class="fas fa-location-arrow me-1"></i> Center on Customer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://api.tomtom.com/maps-sdk-for-web/cdn/6.x/6.23.0/maps/maps-web.min.js"></script>
+    
+    <script>
+    // Global variables
+    let map;
+    let driverMarker;
+    let customerMarker = null;
+    let customerMarkerLabel = null;
+    let storeMarker;
+    let activeOrderId = null;
+    let currentPosition = null;
+    let locationWatchId = null;
+    const TOMTOM_API_KEY = '{{ tomtom_api_key }}';
+    
+    // Driver position
+    let driverPosition = {
+        lat: {% if driver.current_y %}{{ driver.current_y }}{% else %}33.513{% endif %},
+        lon: {% if driver.current_x %}{{ driver.current_x }}{% else %}36.276{% endif %}
+    };
+    
+    // Store position
+    const storePosition = {
+        lat: {% if about.loction_y %}{{ about.loction_y }}{% else %}33.513{% endif %},
+        lon: {% if about.loction_x %}{{ about.loction_x }}{% else %}36.276{% endif %}
+    };
+    
+    // Page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+        startLocationTracking();
+        
+        // Show first order location by default if available
+        const firstOrderCard = document.querySelector('.order-selectable');
+        if (firstOrderCard) {
+            setTimeout(() => {
+                showCustomerLocation(firstOrderCard.dataset.orderId, firstOrderCard);
+            }, 1000);
+        }
+    });
+    
+    function initMap() {
+        // Create map
+        map = tt.map({
+            key: TOMTOM_API_KEY,
+            container: 'map',
+            center: [driverPosition.lon, driverPosition.lat],
+            zoom: 14
+        });
+        
+        map.addControl(new tt.NavigationControl());
+        
+        // Driver marker
+        driverMarker = new tt.Marker({
+            element: createMarkerWithIcon('driver'),
+            anchor: 'center'
+        })
+        .setLngLat([driverPosition.lon, driverPosition.lat])
+        .addTo(map);
+        
+        // Add driver label
+        const driverLabel = document.createElement('div');
+        driverLabel.className = 'customer-marker-label';
+        driverLabel.textContent = 'You';
+        driverLabel.style.color = '#3498db';
+        driverMarker.getElement().appendChild(driverLabel);
+        
+        // Store marker
+        if (storePosition.lat && storePosition.lon) {
+            storeMarker = new tt.Marker({
+                element: createMarkerWithIcon('store'),
+                anchor: 'center'
+            })
+            .setLngLat([storePosition.lon, storePosition.lat])
+            .addTo(map);
+            
+            // Add store label
+            const storeLabel = document.createElement('div');
+            storeLabel.className = 'customer-marker-label';
+            storeLabel.textContent = 'Store';
+            storeLabel.style.color = '#2ecc71';
+            storeMarker.getElement().appendChild(storeLabel);
+        }
+    }
+    
+    function createMarkerWithIcon(type) {
+        const element = document.createElement('div');
+        
+        if (type === 'driver') {
+            element.className = 'marker-driver';
+            element.innerHTML = '<i class="fas fa-car"></i>';
+        } else if (type === 'customer') {
+            element.className = 'marker-customer';
+            element.innerHTML = '<i class="fas fa-home"></i>';
+        } else if (type === 'store') {
+            element.className = 'marker-store';
+            element.innerHTML = '<i class="fas fa-store"></i>';
+        }
+        
+        return element;
+    }
+    
+    function showCustomerLocation(orderId, orderElement) {
+        if (!orderElement) {
+            orderElement = document.querySelector(`[data-order-id="${orderId}"]`);
+        }
+        
+        if (!orderElement) {
+            console.error('Order element not found');
+            return;
+        }
+        
+        // If clicking the same order, deselect it
+        if (activeOrderId === orderId) {
+            clearCustomerLocation();
+            return;
+        }
+        
+        // Set active order
+        activeOrderId = orderId;
+        
+        // Update UI - remove active class from all cards, add to current
+        document.querySelectorAll('.order-selectable').forEach(card => {
+            card.classList.remove('order-active');
+        });
+        orderElement.classList.add('order-active');
+        
+        // Update buttons text
+        document.querySelectorAll('.location-btn').forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Show Location';
+        });
+        const currentLocationBtn = orderElement.querySelector('.location-btn');
+        if (currentLocationBtn) {
+            currentLocationBtn.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Hide Location';
+        }
+        
+        // Get customer coordinates
+        const customerX = parseFloat(orderElement.dataset.customerX);
+        const customerY = parseFloat(orderElement.dataset.customerY);
+        const customerName = orderElement.dataset.customerName;
+        const customerAddress = orderElement.dataset.customerAddress;
+        const customerPhone = orderElement.dataset.customerPhone;
+        
+        console.log('Customer coordinates:', customerX, customerY);
+        console.log('Customer name:', customerName);
+        
+        // Check if coordinates are valid
+        if (!customerX || !customerY || isNaN(customerX) || isNaN(customerY) || customerX === 0 || customerY === 0) {
+            alert('Customer location coordinates are not available or invalid');
+            showErrorOnMap('Location not available');
+            return;
+        }
+        
+        // Remove previous customer marker
+        if (customerMarker) {
+            customerMarker.remove();
+            customerMarker = null;
+        }
+        
+        if (customerMarkerLabel) {
+            customerMarkerLabel.remove();
+            customerMarkerLabel = null;
+        }
+        
+        // Create customer marker element
+        const markerElement = createMarkerWithIcon('customer');
+        markerElement.classList.add('active');
+        
+        // Create customer marker
+        customerMarker = new tt.Marker({
+            element: markerElement,
+            anchor: 'center'
+        })
+        .setLngLat([customerX, customerY])
+        .addTo(map);
+        
+        // Add customer label
+        customerMarkerLabel = document.createElement('div');
+        customerMarkerLabel.className = 'customer-marker-label';
+        customerMarkerLabel.textContent = customerName || 'Customer';
+        markerElement.appendChild(customerMarkerLabel);
+        
+        // Show customer info panel
+        document.getElementById('customerName').textContent = customerName || 'Customer';
+        document.getElementById('customerAddressText').textContent = customerAddress || 'Address not specified';
+        document.getElementById('customerPhoneText').textContent = customerPhone || 'Phone not available';
+        document.getElementById('customerInfoPanel').style.display = 'block';
+        
+        // Add popup to customer marker
+        const popup = new tt.Popup({ offset: 40 })
+            .setHTML(`
+                <div style="padding: 10px; min-width: 220px;">
+                    <h6 style="margin: 0 0 5px 0; color: #e74c3c;">
+                        <i class="fas fa-user me-1"></i> ${customerName || 'Customer'}
+                    </h6>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">
+                        <i class="fas fa-map-marker-alt me-1"></i> 
+                        ${customerAddress || 'Address not specified'}
+                    </p>
+                    <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">
+                        <i class="fas fa-phone me-1"></i> 
+                        ${customerPhone || 'Phone not available'}
+                    </p>
+                    <p style="margin: 0; font-size: 11px; color: #999;">
+                        Order #${orderId.slice(0, 8)}
+                    </p>
+                    <button class="btn btn-primary btn-sm w-100 mt-2" 
+                            onclick="navigateToCustomer()" 
+                            style="font-size: 12px;">
+                        <i class="fas fa-directions me-1"></i> Navigate
+                    </button>
+                </div>
+            `);
+        
+        customerMarker.setPopup(popup);
+        
+        // Open popup automatically
+        customerMarker.togglePopup();
+        
+        // Fit map to show both driver and customer
+        const driverLngLat = driverMarker.getLngLat();
+        fitMapToLocations(driverLngLat.lng, driverLngLat.lat, customerX, customerY);
+        
+        // Log for debugging
+        console.log('Customer location displayed on map:', {
+            customerX: customerX,
+            customerY: customerY,
+            customerName: customerName
+        });
+    }
+    
+    function fitMapToLocations(lon1, lat1, lon2, lat2) {
+        const bounds = new tt.LngLatBounds();
+        bounds.extend([lon1, lat1]);
+        bounds.extend([lon2, lat2]);
+        
+        // Include store if exists
+        if (storeMarker) {
+            const storeLngLat = storeMarker.getLngLat();
+            bounds.extend(storeLngLat);
+        }
+        
+        map.fitBounds(bounds, {
+            padding: {top: 100, bottom: 150, left: 50, right: 50},
+            duration: 1000
+        });
+    }
+    
+    function clearCustomerLocation() {
+        activeOrderId = null;
+        
+        // Remove active class from all cards
+        document.querySelectorAll('.order-selectable').forEach(card => {
+            card.classList.remove('order-active');
+        });
+        
+        // Reset buttons text
+        document.querySelectorAll('.location-btn').forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i> Show Location';
+        });
+        
+        // Remove customer marker
+        if (customerMarker) {
+            customerMarker.remove();
+            customerMarker = null;
+        }
+        
+        if (customerMarkerLabel) {
+            customerMarkerLabel.remove();
+            customerMarkerLabel = null;
+        }
+        
+        // Hide customer info panel
+        document.getElementById('customerInfoPanel').style.display = 'none';
+        
+        // Center map on driver
+        if (currentPosition) {
+            map.flyTo({
+                center: [currentPosition.lon, currentPosition.lat],
+                zoom: 14,
+                duration: 1000
+            });
+        }
+    }
+    
+    function centerOnCustomer() {
+        if (!customerMarker) {
+            alert('No customer location selected');
+            return;
+        }
+        
+        const customerLngLat = customerMarker.getLngLat();
+        map.flyTo({
+            center: customerLngLat,
+            zoom: 16,
+            duration: 1000
+        });
+    }
+    
+    function navigateToCustomer() {
+        if (!customerMarker || !currentPosition) {
+            alert('Customer location or your location is not available');
+            return;
+        }
+        
+        const customerLngLat = customerMarker.getLngLat();
+        const fromLon = currentPosition.lon;
+        const fromLat = currentPosition.lat;
+        
+        // Open Google Maps for navigation
+        const googleMapsUrl = `https://www.google.com/maps/dir/${fromLat},${fromLon}/${customerLngLat.lat},${customerLngLat.lng}`;
+        window.open(googleMapsUrl, '_blank');
+    }
+    
+    function closeCustomerPanel() {
+        clearCustomerLocation();
+    }
+    
+    function showErrorOnMap(message) {
+        // Create error marker
+        const errorElement = document.createElement('div');
+        errorElement.className = 'marker-customer';
+        errorElement.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+        errorElement.style.backgroundColor = '#f39c12';
+        
+        // Place error marker at driver location or center
+        const errorMarker = new tt.Marker({
+            element: errorElement,
+            anchor: 'center'
+        })
+        .setLngLat([driverPosition.lon, driverPosition.lat])
+        .addTo(map);
+        
+        // Add error popup
+        const popup = new tt.Popup({ offset: 30 })
+            .setHTML(`
+                <div style="padding: 10px; min-width: 200px;">
+                    <h6 style="margin: 0 0 5px 0; color: #f39c12;">
+                        <i class="fas fa-exclamation-triangle"></i> Error
+                    </h6>
+                    <p style="margin: 0; font-size: 12px;">${message}</p>
+                </div>
+            `);
+        
+        errorMarker.setPopup(popup);
+        errorMarker.togglePopup();
+        
+        // Remove error after 5 seconds
+        setTimeout(() => {
+            errorMarker.remove();
+        }, 5000);
+    }
+    
+    function startLocationTracking() {
+        if (!navigator.geolocation) {
+            updateStatus("Geolocation not supported", "error");
+            return;
+        }
+        
+        // Track location continuously
+        locationWatchId = navigator.geolocation.watchPosition(
+            handlePositionUpdate,
+            handlePositionError,
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
+        );
+        
+        // Force update every 30 seconds
+        setInterval(() => {
+            navigator.geolocation.getCurrentPosition(
+                handlePositionUpdate,
+                null,
+                { enableHighAccuracy: false, timeout: 5000 }
+            );
+        }, 30000);
+        
+        updateStatus("Tracking active", "success");
+    }
+    
+    function handlePositionUpdate(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const accuracy = position.coords.accuracy || 50;
+        
+        // Update current position
+        currentPosition = {
+            lat: latitude,
+            lon: longitude,
+            accuracy: accuracy
+        };
+        
+        driverPosition.lat = latitude;
+        driverPosition.lon = longitude;
+        
+        // Update marker
+        driverMarker.setLngLat([longitude, latitude]);
+        
+        // Update UI
+        updateLocationUI(latitude, longitude, accuracy);
+        
+        // Send to server
+        sendLocationToServer(longitude, latitude);
+    }
+    
+    function handlePositionError(error) {
+        console.error("Geolocation error:", error);
+        updateStatus("Location error", "error");
+    }
+    
+    function updateLocationUI(latitude, longitude, accuracy) {
+        document.getElementById('mapLocationInfo').textContent = 
+            `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`;
+    }
+    
+    function updateStatus(message, type) {
+        const mapStatusText = document.getElementById('mapStatusText');
+        const indicator = document.getElementById('mapStatusIndicator');
+        
+        mapStatusText.textContent = message;
+        indicator.className = 'location-indicator';
+        indicator.classList.add('location-online');
+    }
+    
+    function sendLocationToServer(longitude, latitude) {
+        const csrftoken = getCookie('csrftoken');
+        
+        fetch('/app/driver/update-location/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrftoken
+            },
+            body: `x=${longitude}&y=${latitude}`
+        });
+    }
+    
+    function completeOrder(orderId, event) {
+        if (event) event.stopPropagation();
+        
+        if (!confirm('Mark this order as delivered?')) return;
+        
+        fetch('/app/driver/complete-order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `order_id=${orderId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Order marked as delivered!');
+                clearCustomerLocation();
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Cleanup
+    window.addEventListener('beforeunload', function() {
+        if (locationWatchId) {
+            navigator.geolocation.clearWatch(locationWatchId);
+        }
+    });
+    </script>
+</body>
+</html>

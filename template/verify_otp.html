@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <link rel="stylesheet" href="{% static 'login.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Verify OTP</h1>
+    
+    <p style="color: white; text-align: center;">
+      OTP sent to: {{ email }}
+    </p>
+    
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="input-group">
+        <i class="fa fa-key"></i>
+        {{ form.otp }}
+      </div>
+      
+      <button type="submit">Verify OTP</button>
+      
+      <div class="links">
+        <a href="{% url 'app:forget_password' %}">Resend OTP</a>
+        <a href="{% url 'app:loginCus' %}">Back to Login</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
