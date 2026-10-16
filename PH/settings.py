@@ -15,7 +15,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # settings.py
-TOMTOM_API_KEY = 'wncqPXyuwK1DoGAegYSHAJ5SyE3ATzh7'  # Your TomTom API key
+TOMTOM_API_KEY = ''  # Your TomTom API key
 # For example, if you installed to C:\OSGeo4W
 GDAL_LIBRARY_PATH = r'C:\OSGeo4W\bin\gdal304.dll'
 GEOS_LIBRARY_PATH = r'C:\OSGeo4W\bin\geos_c.dll'
@@ -23,7 +23,7 @@ GEOS_LIBRARY_PATH = r'C:\OSGeo4W\bin\geos_c.dll'
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-r#(b^cb0sl7q2*i6=uxta!=!tls%z%(vn^k0!36_80s_qzg0cf'
+SECRET_KEY = ''
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -109,7 +109,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'PH',
         'USER': 'postgres',
-        'PASSWORD': 'Youshaa12$',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '5432'
     }
@@ -168,8 +168,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_HOST='smtp.gmail.com'
 EMAIL_USE_TLS=True
 EMAIL_PORT=587
-EMAIL_HOST_USER="marcusjackson57931@gmail.com"
-EMAIL_HOST_PASSWORD="soeflujrbahkbcxd"
+EMAIL_HOST_USER=""
+EMAIL_HOST_PASSWORD=""
 
 
 CORS_ALLOW_ALL_ORIGINS=True
